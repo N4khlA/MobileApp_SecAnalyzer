@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "masa"
+version = "1.0.0"
+description = "Mobile App Security Analyzer - static security assessment of Android APKs and iOS IPAs with OWASP Mobile Top 10 compliance reporting"
+readme = "README.md"
+authors = [
+    { name = "DeepMind Antigravity Team" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+keywords = ["mobile", "security", "android", "ios", "apk", "ipa", "owasp", "static-analysis", "sast"]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.scripts]
+masa = "masa.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/example/masa"
+Documentation = "https://github.com/example/masa#readme"
