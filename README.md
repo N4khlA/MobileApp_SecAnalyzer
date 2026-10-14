@@ -12,14 +12,14 @@ It automatically evaluates application binaries and source code against the **OW
 
 ## Key Features
 
-- ⚡ **Zero External Dependencies**: Runs strictly on Python 3 standard library (`zipfile`, `xml.etree`, `plistlib`, `re`, `struct`).
-- 🤖 **Android & iOS Support**:
+- **Zero External Dependencies**: Runs strictly on Python 3 standard library (`zipfile`, `xml.etree`, `plistlib`, `re`, `struct`).
+- **Android & iOS Support**:
   - **Android**: Parses binary AXML (`AndroidManifest.xml`), DEX string tables, resource files, and ELF `.so` native libraries.
   - **iOS**: Parses binary/XML `Info.plist`, ATS configurations, `.mobileprovision` profiles, and Mach-O executables/frameworks.
-- 🚀 **High Performance Native String Scanning**: C-accelerated regex string extraction for native binaries.
-- 🛡️ **OWASP Mobile Top 10 Compliance**: Scores app posture across all 10 categories (M1-M10) with positive security control detection (Keystore, Keychain, AEAD ciphers, Biometrics, Pinning).
-- 🧩 **Optional Decompiler Integration**: Automatically uses `apktool`, `jadx`, `dex2jar`, or `cfr` if available on `PATH`.
-- 📊 **Multi-Format Reporting**: Generates interactive HTML dashboards, Markdown summaries, and structured JSON reports.
+- **Native String Scanning**: fast regex-based string extraction from native binaries.
+- **OWASP Mobile Top 10 Compliance**: Scores app posture across all 10 categories (M1-M10) with positive security control detection (Keystore, Keychain, AEAD ciphers, Biometrics, Pinning).
+- **Optional Decompiler Integration**: Automatically uses `apktool`, `jadx`, `dex2jar`, or `cfr` if available on `PATH`.
+- **Multi-Format Reporting**: Generates interactive HTML dashboards, Markdown summaries, and structured JSON reports.
 
 ---
 
@@ -27,8 +27,8 @@ It automatically evaluates application binaries and source code against the **OW
 
 ### From Source
 ```bash
-git clone https://github.com/example/masa.git
-cd masa
+git clone https://github.com/N4khlA/MobileApp_SecAnalyzer.git
+cd MobileApp_SecAnalyzer
 pip install .
 ```
 
@@ -125,3 +125,7 @@ python -m unittest discover -s tests
 ## License
 
 Distributed under the [MIT License](LICENSE).
+
+## Author
+
+Built by **Guerfi Ahmed Yacine**, a cyber security engineering student at ESI Sidi Bel Abbès. Portfolio: [n4khla.github.io](https://n4khla.github.io) · [LinkedIn](https://www.linkedin.com/in/guerfi-ahmed-yacine-6831b32b8/)
