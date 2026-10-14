@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Mobile App Security Analyzer - static security assessment of Android APKs and iOS IPAs with OWASP Mobile Top 10 compliance reporting"
 readme = "README.md"
 authors = [
-    { name = "DeepMind Antigravity Team" }
+    { name = "Guerfi Ahmed Yacine", email = "ay.guerfi@esi-sba.dz" }
 ]
 license = { text = "MIT" }
 classifiers = [
@@ -33,5 +33,5 @@ dependencies = []
 masa = "masa.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/example/masa"
-Documentation = "https://github.com/example/masa#readme"
+Homepage = "https://github.com/N4khlA/MobileApp_SecAnalyzer"
+Documentation = "https://github.com/N4khlA/MobileApp_SecAnalyzer#readme"
