@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 from . import __version__
+from . import coverage as _coverage
 from .models import (
     OWASP_2016,
     OWASP_2023,
@@ -175,6 +176,31 @@ def grade_for(pct: int) -> Tuple[str, str]:
     return "F", "Critical - immediate remediation required"
 
 
+def _coverage_of(result: Any) -> Dict[str, Any]:
+    cov = getattr(result, "coverage", None)
+    return cov.to_dict() if cov is not None else _coverage.empty()
+
+
+def coverage_lines(data: Dict[str, Any], limit: int = 5) -> List[str]:
+    """Plain-text coverage summary shared by the console and Markdown."""
+    cov = data.get("coverage") or _coverage.empty()
+    lines = []
+    if cov["complete"]:
+        lines.append("Coverage: complete (%d files read)" % cov["files_seen"])
+    else:
+        lines.append("Coverage: INCOMPLETE - %d of %d files were not analysed; "
+                     "findings may be missing" %
+                     (cov["files_skipped"], cov["files_seen"]))
+        for item in cov["skipped"][:limit]:
+            lines.append("  not analysed: %s (%s)" % (item["file"], item["detail"]))
+        if len(cov["skipped"]) > limit:
+            lines.append("  ... and %d more" % (len(cov["skipped"]) - limit))
+    if cov["degraded"]:
+        lines.append("Fallback scan: %d file(s) scanned as raw strings" %
+                     len(cov["degraded"]))
+    return lines
+
+
 def build_report(result: Any, meta: Optional[Dict[str, Any]] = None, rules_ref: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Serialize an AnalysisResult into the full report dictionary."""
     meta = meta or {}
@@ -232,6 +258,7 @@ def build_report(result: Any, meta: Optional[Dict[str, Any]] = None, rules_ref: 
         "findings": findings,
         "positives": positives,
         "notes": result.notes,
+        "coverage": _coverage_of(result),
         "binaries": result.binaries,
         "permission_audit": result.permission_audit,
         "rules_reference": rules_ref or [],
@@ -258,6 +285,7 @@ def console_summary(data):
     lines.append("Risk score: %d | OWASP compliance: %d%% | Grade: %s"
                  % (data["risk_score"], data["overall_compliance"],
                     data["grade"]))
+    lines.extend(coverage_lines(data))
     lines.append("-" * 70)
     for cat in data["categories"]:
         bar = "#" * (cat["compliance"] // 10) + "." * (10 - cat["compliance"] // 10)
@@ -280,8 +308,32 @@ def write_json(data, path):
         json.dump(data, fh, indent=2, default=str)
 
 
+def _sarif_notification(level, item, text):
+    return {
+        "level": level,
+        "message": {"text": text},
+        "locations": [{"physicalLocation": {"artifactLocation": {
+            "uri": quote(item["file"].replace("\\", "/"), safe="/")}}}],
+    }
+
+
+def _sarif_invocation(data):
+    """Report unanalysed and fallback-scanned files as tool notifications."""
+    cov = data.get("coverage") or _coverage.empty()
+    notes = [_sarif_notification("warning", i, "Not analysed (%s): %s"
+                                 % (i["reason"], i["detail"]))
+             for i in cov["skipped"]]
+    notes += [_sarif_notification("note", i, "Fallback scan: %s" % i["detail"])
+              for i in cov["degraded"]]
+    invocation = {"executionSuccessful": True}
+    if notes:
+        invocation["toolExecutionNotifications"] = notes
+    return invocation
+
+
 def build_sarif(data):
     """Build a SARIF 2.1.0 document for GitHub code scanning."""
+    cov = data.get("coverage") or _coverage.empty()
     refs = {r["id"]: r for r in data.get("rules_reference", [])}
     rule_ids = []
     rule_index = {}
@@ -360,8 +412,15 @@ def build_sarif(data):
                 }
             },
             "results": results,
-            "invocations": [{"executionSuccessful": True}],
-            "properties": {"target": data.get("target", {})},
+            "invocations": [_sarif_invocation(data)],
+            "properties": {
+                "target": data.get("target", {}),
+                "coverage": {
+                    "complete": cov["complete"],
+                    "filesSeen": cov["files_seen"],
+                    "filesSkipped": cov["files_skipped"],
+                },
+            },
         }],
     }
 
@@ -376,6 +435,31 @@ def write_markdown(data, path):
         fh.write(_md(data))
 
 
+def _md_table_cell(text):
+    return str(text).replace("|", "\\|").replace("\n", " ")
+
+
+def _md_coverage(data):
+    cov = data.get("coverage") or _coverage.empty()
+    if cov["complete"] and not cov["degraded"]:
+        return []
+    out = []
+    if not cov["complete"]:
+        out += ["> **Incomplete scan.** %d of %d files could not be analysed, "
+                "so findings in them are missing from this report." %
+                (cov["files_skipped"], cov["files_seen"]), "",
+                "| File | Reason | Detail |", "|---|---|---|"]
+        out += ["| `%s` | %s | %s |" % (_md_table_cell(i["file"]), i["reason"],
+                                      _md_table_cell(i["detail"]))
+                for i in cov["skipped"]]
+        out.append("")
+    if cov["degraded"]:
+        out += ["**Fallback scans** (analysed as raw strings):", ""]
+        out += ["- `%s`: %s" % (i["file"], i["detail"]) for i in cov["degraded"]]
+        out.append("")
+    return out
+
+
 def _md(data):
     t = data["target"]
     pkg = (data["summary"] or {}).get("package") or \
@@ -387,7 +471,7 @@ def _md(data):
            "**Target:** %s (%s)  " % (t.get("name"), t.get("platform")),
            "**Package/Bundle:** %s  " % pkg,
            "**SHA-256:** `%s`  " % (t.get("sha256") or "-"),
-           "",
+           ""] + _md_coverage(data) + [
            "## Executive Summary",
            "",
            "| Metric | Value |",
@@ -497,6 +581,28 @@ def write_html(data, path):
         fh.write(_html(data))
 
 
+def _html_coverage(data):
+    cov = data.get("coverage") or _coverage.empty()
+    parts = []
+    if not cov["complete"]:
+        rows = "".join("<tr><td><code>%s</code></td><td>%s</td><td>%s</td></tr>"
+                       % (_esc(i["file"]), _esc(i["reason"]), _esc(i["detail"]))
+                       for i in cov["skipped"])
+        parts.append(
+            "<section class=\"warn\"><h3>Incomplete scan</h3>"
+            "<p>%d of %d files could not be analysed. Findings in these files "
+            "are missing from this report.</p><table><tr><th>File</th>"
+            "<th>Reason</th><th>Detail</th></tr>%s</table></section>"
+            % (cov["files_skipped"], cov["files_seen"], rows))
+    if cov["degraded"]:
+        items = "".join("<li><code>%s</code>: %s</li>" % (_esc(i["file"]),
+                                                         _esc(i["detail"]))
+                        for i in cov["degraded"])
+        parts.append("<section><h3>Fallback scans</h3><ul>%s</ul></section>"
+                     % items)
+    return "\n".join(parts)
+
+
 def _html(data):
     t = data["target"]
     rows = []
@@ -597,6 +703,9 @@ def _html(data):
  .poctitle{color:#8a97a1;font-size:11px;text-transform:uppercase;margin-bottom:6px}
  .poc pre{margin:0;white-space:pre-wrap;font-family:Consolas,monospace;font-size:12.5px}
  .rem{color:#33691e;font-size:13.5px}
+ .warn{border-left:6px solid #e65100;background:#fff3e0}
+ header code{background:rgba(255,255,255,.14);color:#eceff1}
+ .warn h3{color:#bf360c}
  code{background:#eceff1;padding:1px 5px;border-radius:4px;font-size:12.5px}
  .sub{color:#607d8b;font-size:13px}
  .sev-table td{vertical-align:middle}
@@ -615,6 +724,7 @@ def _html(data):
  <div class="card"><div class="big">%d</div>Risk score</div>
  <div class="card"><div class="big" style="font-size:20px">%s</div>Findings by severity</div>
 </div>
+%s
 <section><h3>Executive Summary</h3>
  <p>%d findings were identified across %d OWASP categories. %s</p>
  <table><tr><th>Severity</th><th>Finding</th><th>Rule</th><th>Location</th></tr>%s</table>
@@ -646,7 +756,7 @@ def _html(data):
         _esc(t.get("sha256") or "-"), SEVERITY_COLORS["critical"],
         data["grade"], _esc(data["grade_description"]),
         data["overall_compliance"], data["risk_score"],
-        _fmt_sev_count(data), len(data["findings"]),
+        _fmt_sev_count(data), _html_coverage(data), len(data["findings"]),
         len(data["categories"]), _esc(data["grade_description"]), top,
         "\n".join(rows), "\n".join(finding_blocks), positives, notes,
         data["tool"], data["version"])

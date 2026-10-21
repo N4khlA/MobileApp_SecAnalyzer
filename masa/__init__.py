@@ -5,4 +5,4 @@ Mobile Top 10 compliance reporting. Dependency-free (Python stdlib only);
 optionally integrates apktool/jadx/dex2jar when available on PATH.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

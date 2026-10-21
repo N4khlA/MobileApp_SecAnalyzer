@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import os
 import sys
+import zipfile
 from typing import Any, Dict, Optional, Sequence
 
 from . import __version__
@@ -19,6 +20,11 @@ from .report import (
     write_sarif,
 )
 from .rules import ALL_RULES, rules_for_category
+
+# Exit codes, matching Semgrep and Bandit. argparse already exits 2 on bad usage.
+EXIT_OK = 0
+EXIT_GATE = 1     # --fail-on threshold reached, or incomplete scan with --strict
+EXIT_ERROR = 2    # bad arguments or input that could not be analysed
 
 
 def _sha256(path: str) -> str:
@@ -78,13 +84,29 @@ def cmd_analyze(args: argparse.Namespace) -> Dict[str, Any]:
         os.makedirs(os.path.dirname(sarif_path), exist_ok=True)
         write_sarif(report, sarif_path)
         print("\nSARIF written to %s" % sarif_path)
-    fail_on = getattr(args, "fail_on", "none")
+    args.exit_code = gate(report, getattr(args, "fail_on", "none"),
+                          getattr(args, "strict", False))
+    return report
+
+
+def gate(report: Dict[str, Any], fail_on: str = "none",
+         strict: bool = False) -> int:
+    """Return EXIT_GATE (and say why on stderr) if the report fails the gate."""
+    reasons = []
     if fail_on and fail_on != "none":
         limit = SEVERITY_ORDER.index(fail_on)
-        if any(SEVERITY_ORDER.index(f["severity"]) <= limit
-               for f in report["findings"]):
-            args.exit_code = 2
-    return report
+        hits = [f for f in report["findings"]
+                if SEVERITY_ORDER.index(f["severity"]) <= limit]
+        if hits:
+            reasons.append("%d finding(s) at or above %s" %
+                           (len(hits), fail_on))
+    cov = report.get("coverage") or {}
+    if strict and not cov.get("complete", True):
+        reasons.append("scan incomplete: %d file(s) not analysed (--strict)" %
+                       cov.get("files_skipped", 0))
+    for reason in reasons:
+        print("masa: gate failed: %s" % reason, file=sys.stderr)
+    return EXIT_GATE if reasons else EXIT_OK
 
 
 def cmd_rules(args: argparse.Namespace) -> int:
@@ -97,7 +119,7 @@ def cmd_rules(args: argparse.Namespace) -> int:
                                                 args.category or "all"))
     print("OWASP Mobile Top 10 2023 categories: M1-M10")
     print("Legacy (2016) mapping is stored per rule.")
-    return 0
+    return EXIT_OK
 
 
 def cmd_demo(args: argparse.Namespace) -> int:
@@ -116,7 +138,7 @@ def cmd_demo(args: argparse.Namespace) -> int:
         no_decompile=True))
     print("\nDemo complete. Sample fixtures and reports are in %s" %
           os.path.abspath(out))
-    return 0
+    return EXIT_OK
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -140,8 +162,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="write a SARIF 2.1.0 report for CI/code scanning")
     pa.add_argument("--fail-on", choices=SEVERITY_ORDER + ["none"],
                     default="none", metavar="LEVEL",
-                    help="exit 2 when a finding at or above LEVEL exists "
+                    help="exit 1 when a finding at or above LEVEL exists "
                          "(critical, high, medium, low, info; default: none)")
+    pa.add_argument("--strict", action="store_true",
+                    help="exit 1 when any input file could not be analysed")
     pa.set_defaults(func=cmd_analyze)
 
     pr = sub.add_parser("rules", help="list detection rules")
@@ -156,16 +180,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     args = parser.parse_args(argv)
     if not args.command:
-        parser.print_help()
-        return 1
+        parser.print_help(sys.stderr)
+        return EXIT_ERROR
     try:
         res = args.func(args)
         if isinstance(res, int):
             return res
-        return getattr(args, "exit_code", 0)
-    except (ValueError, OSError, KeyError) as exc:
+        return getattr(args, "exit_code", EXIT_OK)
+    except (ValueError, OSError, KeyError, zipfile.BadZipFile) as exc:
         print("error: %s" % exc, file=sys.stderr)
-        return 1
+        return EXIT_ERROR
 
 
 if __name__ == "__main__":

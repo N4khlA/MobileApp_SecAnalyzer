@@ -4,6 +4,39 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 semantic versioning.
 
+## [1.2.0] - 2026-10-21
+
+### Added
+
+- Scan coverage tracking. Every file that could not be analysed, and every
+  file scanned only as raw strings, is listed in the console, JSON, Markdown,
+  HTML and SARIF output.
+- `--strict` fails the gate when any input file could not be analysed.
+- Unrecognised `.so` files are now scanned as raw strings instead of skipped.
+
+### Changed
+
+- **Breaking:** exit codes now match Semgrep and Bandit. `1` means the gate
+  failed (it was `2`), and `2` means an error (it was `1`). The old scheme
+  could not tell a failed gate from a mistyped command, because argparse
+  also exits `2`.
+- `masa` with no command prints help to stderr and exits `2`.
+- The reason for a failed gate is printed to stderr.
+- APK and IPA loading share one reader in `masa/archive.py`.
+
+### Fixed
+
+- A zip entry with a forged size or bad CRC was silently dropped, so the
+  scan looked cleaner than it was. On the demo APK, forging the size of
+  `classes.dex` hid 18 of 38 findings with no warning.
+- A corrupt deflate stream, an encrypted entry or an unsupported compression
+  method aborted the whole scan instead of skipping that entry.
+- Text files over 8 MiB, and folder-mode files over the size limit, were
+  skipped without being reported.
+- A finding on `AndroidManifest.xml` was reported again for the normalized
+  manifest view, inflating counts and the risk score.
+- The SHA-256 in the HTML report header was unreadable.
+
 ## [1.1.0] - 2026-10-21
 
 ### Added

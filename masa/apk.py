@@ -16,12 +16,14 @@ import zipfile
 from xml.etree import ElementTree as ET
 
 from . import archive, axml, decompile, dex, native, scanner
+from .coverage import TOO_LARGE, UNREADABLE, Coverage, human_size
 from .models import Finding, PositiveCheck, Rule
 from .rules import ALL_RULES, BY_ID
 
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 
 MAX_TEXT_SIZE = 8 * 1024 * 1024
+MANIFEST_VIEW = "AndroidManifest.xml (normalized)"
 
 # dangerous-protection-level permissions and their usage keywords
 DANGEROUS = {
@@ -326,35 +328,12 @@ class AnalysisResult:
         self.app_name = None
         self.binaries = []
         self.permission_audit = []
+        self.coverage = Coverage()
 
 
-def _load_files(input_path):
+def _load_files(input_path, coverage):
     """Return {relpath: bytes} from a zip (APK) or a directory tree."""
-    files = {}
-    if zipfile.is_zipfile(input_path):
-        with zipfile.ZipFile(input_path) as zf:
-            archive.check_zip(zf)
-            for name in zf.namelist():
-                try:
-                    files[name] = zf.read(name)
-                except (KeyError, zipfile.BadZipFile):
-                    continue
-    else:
-        for dirpath, dirnames, filenames in os.walk(input_path):
-            for fn in filenames:
-                full = os.path.join(dirpath, fn)
-                rel = os.path.relpath(full, input_path)
-                try:
-                    size = os.path.getsize(full)
-                    if size > archive.MAX_ENTRY_SIZE:
-                        continue
-                    if size > MAX_TEXT_SIZE and not fn.endswith((".dex", ".so")):
-                        continue
-                    with open(full, "rb") as fh:
-                        files[rel] = fh.read()
-                except OSError:
-                    continue
-    return files
+    return archive.load(input_path, coverage)
 
 
 def _dedupe(findings):
@@ -369,6 +348,14 @@ def _dedupe(findings):
     return out
 
 
+def _drop_manifest_view_duplicates(findings):
+    """Drop text-scan hits on the normalized manifest that a structured check
+    already reported on the real AndroidManifest.xml."""
+    structured = {f.rule.id for f in findings if f.file == "AndroidManifest.xml"}
+    return [f for f in findings
+            if not (f.file == MANIFEST_VIEW and f.rule.id in structured)]
+
+
 def _rule(id_):
     r = BY_ID.get(id_)
     if r:
@@ -377,12 +364,17 @@ def _rule(id_):
     return Rule(id_, id_, "medium", "M8", "config")
 
 
+def _skip_large(result, name, size):
+    result.coverage.skip(name, TOO_LARGE, "%s exceeds the %s text scan limit"
+                         % (human_size(size), human_size(MAX_TEXT_SIZE)))
+
+
 def analyze_apk(input_path, out_dir=None, use_decompiler=True):
     """Analyze an APK file or Android project directory."""
     result = AnalysisResult()
     work = tempfile.mkdtemp(prefix="masa_apk_")
     try:
-        files = _load_files(input_path)
+        files = _load_files(input_path, result.coverage)
         if not files:
             raise ValueError("could not read input (not a zip/apk and not a directory)")
 
@@ -416,15 +408,18 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
                 so_blobs.append((name, data))
             elif scanner.is_text_ext(low):
                 if len(data) > MAX_TEXT_SIZE:
-                    result.notes.append("skipped oversized text file: %s" % name)
+                    _skip_large(result, name, len(data))
                     continue
                 text_files.append((name, scanner.decode_text(data)))
             elif low.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp",
                                ".arsc", ".otf", ".ttf")):
                 continue
-            elif len(data) <= MAX_TEXT_SIZE and b"\x00" not in data[:4096]:
+            elif b"\x00" not in data[:4096]:
+                if len(data) > MAX_TEXT_SIZE:
+                    _skip_large(result, name, len(data))
+                    continue
                 text_files.append((name, scanner.decode_text(data)))
-        text_files.append(("AndroidManifest.xml (normalized)",
+        text_files.append((MANIFEST_VIEW,
                            result.manifest.dump_xml()))
 
         scanner_.scan_all(text_files, findings)
@@ -435,8 +430,8 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
             strings = dex.dex_strings(blob)
             if not strings:
                 strings = dex.extract_naive(blob, 5)
-                result.notes.append("%s: not a valid dex, used raw string scan"
-                                    % name)
+                result.coverage.degrade(
+                    name, "not a valid dex file; scanned raw strings instead")
             else:
                 dex_ok += 1
             scanner_.scan_strings(strings, name, findings)
@@ -449,7 +444,11 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
                 result.binaries.append({"file": name, "info": info})
                 scanner_.scan_strings(info.get("strings", []), name, findings)
             else:
-                result.notes.append("%s: not a recognized ELF binary" % name)
+                scanner_.scan_strings(native.extract_strings(blob), name,
+                                      findings)
+                result.coverage.degrade(
+                    name, "not a recognized ELF binary; scanned raw strings "
+                          "instead")
 
         # ---- optional decompilation ----
         decompiled_extra = []
@@ -470,11 +469,14 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
                                 try:
                                     with open(full, "rb") as fh:
                                         data = fh.read()
-                                    if len(data) <= MAX_TEXT_SIZE:
-                                        decompiled_extra.append(
-                                            (rel, scanner.decode_text(data)))
-                                except OSError:
-                                    continue
+                                    if len(data) > MAX_TEXT_SIZE:
+                                        _skip_large(result, rel, len(data))
+                                        continue
+                                    decompiled_extra.append(
+                                        (rel, scanner.decode_text(data)))
+                                except OSError as exc:
+                                    result.coverage.skip(
+                                        rel, UNREADABLE, str(exc))
         scanner_.scan_all(decompiled_extra, findings)
         if tools:
             result.notes.append("decompilers available: %s" %
@@ -509,7 +511,7 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
         # ---- manifest-driven programmatic checks ----
         _manifest_checks(result, findings, files)
         _permission_checks(result, findings, evidence_pool)
-        findings = _dedupe(findings)
+        findings = _drop_manifest_view_duplicates(_dedupe(findings))
         result.findings = findings
         return result
     finally:

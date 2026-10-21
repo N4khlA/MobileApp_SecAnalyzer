@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "masa"
-version = "1.1.0"
+version = "1.2.0"
 description = "Mobile App Security Analyzer - static security assessment of Android APKs and iOS IPAs with OWASP Mobile Top 10 compliance reporting"
 readme = "README.md"
 authors = [
@@ -49,7 +49,6 @@ packages = ["masa"]
 [tool.ruff]
 target-version = "py39"
 line-length = 100
-extend-exclude = ["samples"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
