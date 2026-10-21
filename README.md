@@ -78,24 +78,51 @@ masa rules --category crypto
 
 ## CI Integration
 
-`masa analyze` exits `0` when the scan completes, `1` on an error, and `2` when
-the `--fail-on` threshold is triggered. Write SARIF for GitHub code scanning:
+Write SARIF for GitHub code scanning and fail the build on serious findings:
 
 ```bash
-masa analyze app.apk -o reports/ --sarif reports/masa.sarif --fail-on high
+masa analyze app.apk -o reports/ --sarif reports/masa.sarif --fail-on high --strict
 ```
 
 ```yaml
 - name: Scan APK
-  run: masa analyze app.apk --sarif masa.sarif --fail-on high
+  run: masa analyze app.apk --sarif masa.sarif --fail-on high --strict
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
   with:
     sarif_file: masa.sarif
 ```
 
+| Exit code | Meaning |
+|---|---|
+| `0` | Scan finished and passed the gate |
+| `1` | Gate failed: a finding at or above `--fail-on`, or an incomplete scan with `--strict` |
+| `2` | Error: bad arguments, or input that could not be analysed |
+
 `--fail-on` accepts `critical`, `high`, `medium`, `low`, `info` or `none`
-(default). The gate looks for any finding at or above the chosen severity.
+(default). The reason for a failed gate is printed to stderr.
+
+### Scan coverage
+
+A scanner that silently drops a file reports fewer findings than the app really
+has. masa records every file it could not analyse (corrupt, encrypted or
+forged zip entries, unsupported compression, files over the size limits, unreadable
+files) and every file it could only scan as raw strings (invalid dex, unrecognised
+native libraries). Each report shows this:
+
+- **Console and Markdown:** a `Coverage: INCOMPLETE` line or banner listing the files.
+- **HTML:** an "Incomplete scan" section above the executive summary.
+- **JSON:** a `coverage` object with `complete`, `files_seen`, `skipped` and `degraded`.
+- **SARIF:** `toolExecutionNotifications` on the invocation, plus `run.properties.coverage`.
+
+Add `--strict` to fail the build when coverage is incomplete. Media files (images,
+audio, fonts) are never scanned and do not count as gaps.
+
+### SARIF locations
+
+Results point at paths *inside the analysed app* (for example `classes.dex` or
+`res/values/strings.xml`), not at files in your repository. GitHub shows the alerts,
+but the file links only resolve when you scan a source tree that is checked in.
 
 This is a static analyzer. It does not replace dynamic testing, and a clean
 scan is not proof that an app is secure.
@@ -136,7 +163,8 @@ masa/
 ├── rules.py          # Detection rule definitions (OWASP 2023 & 2016)
 ├── models.py         # Core data models (Rule, Finding, PositiveCheck)
 ├── report.py         # Compliance scoring and JSON/MD/HTML/SARIF generators
-├── archive.py        # Zip size limits before archives are read
+├── archive.py        # Zip/tree readers with size limits
+├── coverage.py       # Tracks files that were skipped or only partly analysed
 ├── samples.py        # Pure-Python vulnerable APK/IPA fixtures for `masa demo`
 └── decompile.py      # Optional external decompiler wrapper (jadx/apktool)
 ```

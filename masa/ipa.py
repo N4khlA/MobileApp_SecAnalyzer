@@ -8,17 +8,16 @@ Handles:
   - privacy (ATT), entitlements and provisioning checks
 """
 
-import os
 import plistlib
 import re
 import shutil
 import struct
 import tempfile
-import zipfile
 
 from . import archive, native, scanner
 from . import plist as bplist
 from .apk import AnalysisResult, _dedupe, _rule
+from .coverage import TOO_LARGE, human_size, is_media
 from .models import Finding, PositiveCheck
 from .rules import ALL_RULES
 
@@ -44,28 +43,13 @@ EVIDENCE = {
 ABSENCE_RULES = {"BIN-002": "obfuscation", "BIN-003": "root_detection"}
 
 
-def _load_files(input_path):
-    files = {}
-    if zipfile.is_zipfile(input_path):
-        with zipfile.ZipFile(input_path) as zf:
-            archive.check_zip(zf)
-            for name in zf.namelist():
-                try:
-                    files[name] = zf.read(name)
-                except (KeyError, zipfile.BadZipFile):
-                    continue
-    else:
-        for dirpath, _d, fns in os.walk(input_path):
-            for fn in fns:
-                full = os.path.join(dirpath, fn)
-                rel = os.path.relpath(full, input_path)
-                try:
-                    if os.path.getsize(full) <= MAX_BINARY_SIZE:
-                        with open(full, "rb") as fh:
-                            files[rel] = fh.read()
-                except OSError:
-                    continue
-    return files
+def _load_files(input_path, coverage):
+    return archive.load(input_path, coverage, MAX_BINARY_SIZE)
+
+
+def _skip_large(result, name, size, limit, what):
+    result.coverage.skip(name, TOO_LARGE, "%s exceeds the %s %s limit"
+                         % (human_size(size), human_size(limit), what))
 
 
 def _find_app_dir(files):
@@ -106,7 +90,7 @@ def analyze_ipa(input_path, out_dir=None):
     result.platform = "ios"
     work = tempfile.mkdtemp(prefix="masa_ipa_")
     try:
-        files = _load_files(input_path)
+        files = _load_files(input_path, result.coverage)
         if not files:
             raise ValueError("could not read input (not a zip and not a directory)")
 
@@ -140,14 +124,15 @@ def analyze_ipa(input_path, out_dir=None):
         for name, data in files.items():
             low = name.lower()
             if len(data) > MAX_BINARY_SIZE:
-                result.notes.append("skipped oversized file: %s" % name)
+                _skip_large(result, name, len(data), MAX_BINARY_SIZE, "file")
                 continue
             if scanner.is_text_ext(low):
-                if len(data) <= MAX_TEXT_SIZE:
-                    text_files.append((name, scanner.decode_text(data)))
-            elif low.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp",
-                               ".wav", ".mp3", ".mov", ".mp4", ".ttf",
-                               ".otf", ".dylib", ".a")):
+                if len(data) > MAX_TEXT_SIZE:
+                    _skip_large(result, name, len(data), MAX_TEXT_SIZE,
+                                "text scan")
+                    continue
+                text_files.append((name, scanner.decode_text(data)))
+            elif is_media(low) or low.endswith((".dylib", ".a")):
                 continue
             else:
                 info_struct, f = native.analyze_binary(data, name)
@@ -156,8 +141,11 @@ def analyze_ipa(input_path, out_dir=None):
                     findings.extend(f)
                     scanner_.scan_strings(info_struct.get("strings", []),
                                           name, findings)
-                elif len(data) <= MAX_TEXT_SIZE and \
-                        b"\x00" not in data[:4096]:
+                elif b"\x00" not in data[:4096]:
+                    if len(data) > MAX_TEXT_SIZE:
+                        _skip_large(result, name, len(data), MAX_TEXT_SIZE,
+                                    "text scan")
+                        continue
                     text_files.append((name, scanner.decode_text(data)))
 
         scanner_.scan_all(text_files, findings)

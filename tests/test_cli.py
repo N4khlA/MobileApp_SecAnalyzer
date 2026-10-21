@@ -118,7 +118,7 @@ class TestCliGate(unittest.TestCase):
             return main(["analyze", self.apk, "--no-decompile"] + list(args))
 
     def test_fail_on_critical(self):
-        self.assertEqual(self._run("--fail-on", "critical"), 2)
+        self.assertEqual(self._run("--fail-on", "critical"), 1)
 
     def test_fail_on_none(self):
         self.assertEqual(self._run("--fail-on", "none"), 0)
@@ -133,7 +133,7 @@ class TestCliGate(unittest.TestCase):
         with self.assertRaises(SystemExit) as err, redirect_stdout(out):
             main(["--version"])
         self.assertEqual(err.exception.code, 0)
-        self.assertIn("masa 1.1.0", out.getvalue())
+        self.assertIn("masa 1.2.0", out.getvalue())
 
 
 if __name__ == "__main__":
