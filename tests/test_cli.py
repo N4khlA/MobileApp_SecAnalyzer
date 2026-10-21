@@ -124,7 +124,7 @@ class TestCliGate(unittest.TestCase):
         self.assertEqual(self._run("--fail-on", "none"), 0)
 
     def test_sarif_flag(self):
-        path = os.path.join(self.tmp, "gate.sarif")
+        path = os.path.join(self.tmp, "nested", "gate.sarif")
         self.assertEqual(self._run("--sarif", path), 0)
         self.assertTrue(os.path.getsize(path) > 1000)
 

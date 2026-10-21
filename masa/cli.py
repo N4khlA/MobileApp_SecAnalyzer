@@ -74,8 +74,10 @@ def cmd_analyze(args: argparse.Namespace) -> Dict[str, Any]:
         write_html(report, os.path.join(args.outdir, base + ".report.html"))
         print("\nReports written to %s" % os.path.abspath(args.outdir))
     if getattr(args, "sarif", None):
-        write_sarif(report, args.sarif)
-        print("\nSARIF written to %s" % os.path.abspath(args.sarif))
+        sarif_path = os.path.abspath(args.sarif)
+        os.makedirs(os.path.dirname(sarif_path), exist_ok=True)
+        write_sarif(report, sarif_path)
+        print("\nSARIF written to %s" % sarif_path)
     fail_on = getattr(args, "fail_on", "none")
     if fail_on and fail_on != "none":
         limit = SEVERITY_ORDER.index(fail_on)
