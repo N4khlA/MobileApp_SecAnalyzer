@@ -10,7 +10,6 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "samples"))
 
 from masa import (axml, dex as mdex, native,  # noqa: E402
                   plist as bplist, scanner)
@@ -22,14 +21,14 @@ from masa.report import build_report, console_summary, write_html, \
 from masa.rules import ALL_RULES  # noqa: E402
 
 
-from make_samples import (build_apk, build_ipa, make_dex,  # noqa: E402
+from masa.samples import (build_apk, build_ipa, make_dex,  # noqa: E402
                           make_elf64, make_macho64, MACHO_PAYLOAD,
                           NATIVE_DATA, INFO_PLIST)
 
 
 class TestAxml(unittest.TestCase):
     def test_roundtrip(self):
-        from make_samples import build_android_manifest
+        from masa.samples import build_android_manifest
         data = build_android_manifest()
         self.assertTrue(axml.looks_like_axml(data))
         info = parse_manifest_bytes(data)
@@ -87,7 +86,7 @@ class TestPlist(unittest.TestCase):
 
 class TestDex(unittest.TestCase):
     def test_roundtrip(self):
-        from make_samples import DEX_STRINGS
+        from masa.samples import DEX_STRINGS
         blob = make_dex(DEX_STRINGS)
         self.assertTrue(blob.startswith(b"dex\n"))
         got = mdex.dex_strings(blob)

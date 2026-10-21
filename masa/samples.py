@@ -15,11 +15,7 @@ import os
 import struct
 import zipfile
 
-import sys
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
-from masa import axml, plist  # noqa: E402
+from . import axml, plist
 
 # =====================================================================
 # Android vulnerable app source
@@ -331,7 +327,6 @@ def _attr(name, value, dtype=axml.TYPE_STRING):
 
 
 def build_android_manifest():
-    root = axml.Element(axml.ANDROID_NS, "manifest")
     m = axml.Element(None, "manifest")
     m.attrs = [_attr("package", "com.vulnbank.demo"),
                _attr("versionCode", 1, axml.TYPE_INT_DEC),
@@ -491,9 +486,9 @@ def build_all(outdir):
     print("built fixtures:")
     print("  %s" % apk)
     print("  %s" % ipa)
-    print("  %s\\" % tree)
+    print("  %s" % tree)
     return apk, ipa
 
 
 if __name__ == "__main__":
-    build_all(os.path.join(HERE, "out"))
+    build_all(os.path.join(os.getcwd(), "masa-demo"))
