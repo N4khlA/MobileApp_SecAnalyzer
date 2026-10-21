@@ -12,15 +12,21 @@ Methodology:
 
 import html
 import json
-import os
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote
 
-from .models import (CATEGORY_NAMES, OWASP_2016, OWASP_2023,
-                     SEVERITY_ORDER, SEVERITY_WEIGHTS)
+from . import __version__
+from .models import (
+    OWASP_2016,
+    OWASP_2023,
+    SEVERITY_ORDER,
+    SEVERITY_WEIGHTS,
+    stable_id,
+)
 
 TOOL_NAME = "Mobile App Security Analyzer (masa)"
-TOOL_VERSION = "1.0.0"
+TOOL_VERSION = __version__
 
 # category -> list of (check_id, check_name, weight, kind, refs)
 # kind "absent": refs = rule ids (or id prefixes) whose findings fail it
@@ -103,6 +109,12 @@ SEVERITY_COLORS = {
     "critical": "#b71c1c", "high": "#e65100", "medium": "#f9a825",
     "low": "#689f38", "info": "#607d8b",
 }
+
+# SARIF uses error/warning/note; GitHub's security tab uses the numeric score.
+SARIF_LEVELS = {"critical": "error", "high": "error", "medium": "warning",
+                "low": "note", "info": "note"}
+SECURITY_SEVERITY = {"critical": "9.5", "high": "8.0", "medium": "5.5",
+                     "low": "2.5", "info": "0.0"}
 
 
 def _matches(rule_id: str, refs: List[str]) -> bool:
@@ -266,6 +278,97 @@ def console_summary(data):
 def write_json(data, path):
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=2, default=str)
+
+
+def build_sarif(data):
+    """Build a SARIF 2.1.0 document for GitHub code scanning."""
+    refs = {r["id"]: r for r in data.get("rules_reference", [])}
+    rule_ids = []
+    rule_index = {}
+    severities = {}
+    for finding in data["findings"]:
+        rid = finding["id"]
+        if rid not in rule_index:
+            rule_index[rid] = len(rule_ids)
+            rule_ids.append(rid)
+            severities[rid] = finding["severity"]
+
+    rules = []
+    for rid in rule_ids:
+        meta = refs.get(rid, {})
+        severity = meta.get("severity") or severities[rid]
+        rules.append({
+            "id": rid,
+            "name": rid,
+            "shortDescription": {"text": meta.get("title", rid)},
+            "fullDescription": {"text": meta.get("description", "")},
+            "help": {"text": meta.get("remediation", "")},
+            "defaultConfiguration": {
+                "level": SARIF_LEVELS.get(severity, "note")
+            },
+            "properties": {
+                "security-severity": SECURITY_SEVERITY.get(severity, "0.0"),
+                "tags": ["security", meta.get("owasp", "")],
+            },
+        })
+
+    results = []
+    for finding in data["findings"]:
+        rid = finding["id"]
+        path = finding.get("file") or ""
+        line = finding.get("line")
+        result = {
+            "ruleId": rid,
+            "ruleIndex": rule_index[rid],
+            "level": SARIF_LEVELS.get(finding["severity"], "note"),
+            "message": {
+                "text": "%s [%s]" % (finding["title"], finding["owasp"])
+            },
+            "partialFingerprints": {
+                "masa/v1": stable_id("%s|%s|%s|%s" % (
+                    rid, path, line or 0, finding.get("match") or ""))
+            },
+            "properties": {
+                "severity": finding["severity"],
+                "owasp": finding["owasp"],
+                "evidenceType": finding.get("evidence_type", ""),
+            },
+        }
+        if path:
+            location = {
+                "artifactLocation": {
+                    "uri": quote(path.replace("\\", "/"), safe="/")
+                }
+            }
+            if line and finding.get("evidence_type") in ("code", "manifest",
+                                                          "config"):
+                location["region"] = {"startLine": int(line)}
+            result["locations"] = [{"physicalLocation": location}]
+        results.append(result)
+
+    return {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "masa",
+                    "informationUri": "https://github.com/N4khlA/"
+                                      "MobileApp_SecAnalyzer",
+                    "version": data.get("version", TOOL_VERSION),
+                    "rules": rules,
+                }
+            },
+            "results": results,
+            "invocations": [{"executionSuccessful": True}],
+            "properties": {"target": data.get("target", {})},
+        }],
+    }
+
+
+def write_sarif(data, path):
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(build_sarif(data), fh, indent=2, default=str)
 
 
 def write_markdown(data, path):
