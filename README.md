@@ -1,6 +1,7 @@
 # Mobile App Security Analyzer (`masa`)
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![ci](https://github.com/N4khlA/MobileApp_SecAnalyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/N4khlA/MobileApp_SecAnalyzer/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![OWASP Mobile Top 10](https://img.shields.io/badge/OWASP-Mobile%20Top%2010%20(2023)-red.svg)](https://owasp.org/www-project-mobile-top-10/)
 
@@ -19,7 +20,8 @@ It automatically evaluates application binaries and source code against the **OW
 - **Native String Scanning**: fast regex-based string extraction from native binaries.
 - **OWASP Mobile Top 10 Compliance**: Scores app posture across all 10 categories (M1-M10) with positive security control detection (Keystore, Keychain, AEAD ciphers, Biometrics, Pinning).
 - **Optional Decompiler Integration**: Automatically uses `apktool`, `jadx`, `dex2jar`, or `cfr` if available on `PATH`.
-- **Multi-Format Reporting**: Generates interactive HTML dashboards, Markdown summaries, and structured JSON reports.
+- **Multi-Format Reporting**: Generates interactive HTML dashboards, Markdown summaries, structured JSON reports and SARIF 2.1.0 for code scanning.
+- **CI Gate**: `--fail-on` turns findings into a non-zero exit code, so a pipeline can block on critical or high severity issues.
 
 ---
 
@@ -34,7 +36,7 @@ pip install .
 
 ### Development / Editable Mode
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ---
@@ -74,6 +76,32 @@ masa rules --category crypto
 
 ---
 
+## CI Integration
+
+`masa analyze` exits `0` when the scan completes, `1` on an error, and `2` when
+the `--fail-on` threshold is triggered. Write SARIF for GitHub code scanning:
+
+```bash
+masa analyze app.apk -o reports/ --sarif reports/masa.sarif --fail-on high
+```
+
+```yaml
+- name: Scan APK
+  run: masa analyze app.apk --sarif masa.sarif --fail-on high
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: masa.sarif
+```
+
+`--fail-on` accepts `critical`, `high`, `medium`, `low`, `info` or `none`
+(default). The gate looks for any finding at or above the chosen severity.
+
+This is a static analyzer. It does not replace dynamic testing, and a clean
+scan is not proof that an app is secure.
+
+---
+
 ## OWASP Mobile Top 10 (2023) Coverage
 
 | OWASP Category | Name | Detection Scope |
@@ -107,18 +135,30 @@ masa/
 ├── scanner.py        # High-performance regex text/string scanner
 ├── rules.py          # Detection rule definitions (OWASP 2023 & 2016)
 ├── models.py         # Core data models (Rule, Finding, PositiveCheck)
-├── report.py         # Compliance scoring and JSON/MD/HTML report generators
+├── report.py         # Compliance scoring and JSON/MD/HTML/SARIF generators
+├── archive.py        # Zip size limits before archives are read
+├── samples.py        # Pure-Python vulnerable APK/IPA fixtures for `masa demo`
 └── decompile.py      # Optional external decompiler wrapper (jadx/apktool)
 ```
 
 ---
 
-## Testing
+## Development
 
-Run the test suite using Python's standard `unittest` framework:
 ```bash
-python -m unittest discover -s tests
+pip install -e ".[dev]"
+ruff check .
+pytest --cov=masa
 ```
+
+The tests use `unittest` cases and also run under `pytest`. The suite builds
+its own vulnerable APK/IPA fixtures, so no Android SDK or Xcode is required.
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
