@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 semantic versioning.
 
+## [Unreleased]
+
+### Changed
+
+- Minimum Python version is 3.10. Python 3.9 reached end-of-life in October
+  2025, and current pytest and setuptools releases no longer install on it.
+- CI tests Python 3.10-3.14 and builds the wheel on 3.14.
+- CI uses `actions/checkout@v7` and `actions/setup-python@v7`.
+- Dependabot only raises a version floor when a new release falls outside the
+  allowed range, and groups updates into one PR per ecosystem.
+
 ## [1.2.0] - 2026-10-21
 
 ### Added

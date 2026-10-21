@@ -1,7 +1,7 @@
 # Mobile App Security Analyzer (`masa`)
 
 [![ci](https://github.com/N4khlA/MobileApp_SecAnalyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/N4khlA/MobileApp_SecAnalyzer/actions/workflows/ci.yml)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![OWASP Mobile Top 10](https://img.shields.io/badge/OWASP-Mobile%20Top%2010%20(2023)-red.svg)](https://owasp.org/www-project-mobile-top-10/)
 

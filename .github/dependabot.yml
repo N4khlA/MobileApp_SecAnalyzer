@@ -4,7 +4,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Dependencies use ">=" floors. Only raise a floor when a release falls
+    # outside the range, instead of opening a PR for every new version.
+    versioning-strategy: increase-if-necessary
+    groups:
+      dev:
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
