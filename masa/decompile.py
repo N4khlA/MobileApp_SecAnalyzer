@@ -8,7 +8,6 @@ dex string tables are recovered (see masa.dex).
 import os
 import shutil
 import subprocess
-import tempfile
 
 
 def which(cmd):

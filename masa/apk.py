@@ -15,9 +15,9 @@ import tempfile
 import zipfile
 from xml.etree import ElementTree as ET
 
-from . import axml, decompile, dex, native, scanner
+from . import archive, axml, decompile, dex, native, scanner
 from .models import Finding, PositiveCheck, Rule
-from .rules import ALL_RULES, BY_ID, get_rule
+from .rules import ALL_RULES, BY_ID
 
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 
@@ -333,6 +333,7 @@ def _load_files(input_path):
     files = {}
     if zipfile.is_zipfile(input_path):
         with zipfile.ZipFile(input_path) as zf:
+            archive.check_zip(zf)
             for name in zf.namelist():
                 try:
                     files[name] = zf.read(name)
@@ -345,6 +346,8 @@ def _load_files(input_path):
                 rel = os.path.relpath(full, input_path)
                 try:
                     size = os.path.getsize(full)
+                    if size > archive.MAX_ENTRY_SIZE:
+                        continue
                     if size > MAX_TEXT_SIZE and not fn.endswith((".dex", ".so")):
                         continue
                     with open(full, "rb") as fh:

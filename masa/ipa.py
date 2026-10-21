@@ -15,10 +15,10 @@ import shutil
 import struct
 import tempfile
 import zipfile
-from typing import Any, Dict, List, Optional, Tuple, Union
 
-from . import native, plist as bplist, scanner
-from .apk import AnalysisResult, _rule, _dedupe
+from . import archive, native, scanner
+from . import plist as bplist
+from .apk import AnalysisResult, _dedupe, _rule
 from .models import Finding, PositiveCheck
 from .rules import ALL_RULES
 
@@ -48,6 +48,7 @@ def _load_files(input_path):
     files = {}
     if zipfile.is_zipfile(input_path):
         with zipfile.ZipFile(input_path) as zf:
+            archive.check_zip(zf)
             for name in zf.namelist():
                 try:
                     files[name] = zf.read(name)
@@ -224,13 +225,9 @@ def _plist_checks(result, findings, info, plist_path, extra=False):
         except (TypeError, ValueError):
             pass
 
-    uses_tracking = False
     if info.get("NSUserTrackingUsageDescription"):
         result.positives.append(PositiveCheck(
             "att_consent", "ATT usage description present", plist_path))
-    for key in ("NSAdvertisingAttributionReportEndpoint",):
-        if info.get(key):
-            uses_tracking = True
 
 
 def _provision_checks(result, findings, profile, text, name):

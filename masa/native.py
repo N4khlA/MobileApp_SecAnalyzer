@@ -8,7 +8,7 @@ unencrypted Mach-O) but cannot prove memory safety.
 
 import re
 import struct
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List
 
 from .models import Finding, Rule
 

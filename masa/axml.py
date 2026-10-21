@@ -174,7 +174,6 @@ def parse(data):
             continue
         if csize < 8 or pos + csize > n:
             break
-        body = data[pos + hsize: pos + csize]
         if ctype == 0x0001:                      # string pool
             pool = _read_string_pool(data, pos, csize)
         elif ctype == 0x0102:                    # start element

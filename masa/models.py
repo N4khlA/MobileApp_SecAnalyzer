@@ -3,7 +3,6 @@
 import hashlib
 from typing import Any, Dict, List, Optional
 
-
 SEVERITY_WEIGHTS: Dict[str, int] = {
     "critical": 10,
     "high": 6,
