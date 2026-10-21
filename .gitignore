@@ -23,6 +23,7 @@ wheels/
 
 # Unit test & coverage reports
 .pytest_cache/
+.ruff_cache/
 .coverage
 .coverage.*
 htmlcov/
@@ -31,6 +32,7 @@ htmlcov/
 
 # Sample output fixtures & temporary reports
 samples/out/
+masa-demo/
 *.report.json
 *.report.md
 *.report.html
