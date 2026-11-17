@@ -18,8 +18,10 @@ It automatically evaluates application binaries and source code against the **OW
   - **Android**: Parses binary AXML (`AndroidManifest.xml`), DEX string tables, resource files, and ELF `.so` native libraries.
   - **iOS**: Parses binary/XML `Info.plist`, ATS configurations, `.mobileprovision` profiles, and Mach-O executables/frameworks.
 - **Native String Scanning**: fast regex-based string extraction from native binaries.
+- **Android IPC Checks**: intent redirection, mutable implicit PendingIntents, sticky broadcasts, spoofable caller checks, unflagged dynamic receivers, weak custom permissions and root-wide URI grants.
+- **Binary Hardening**: PIE, RELRO, NX stack and stack canaries on ELF; encryption, stack canaries and ARC on Mach-O; APK signature scheme (v1-only / Janus).
 - **OWASP Mobile Top 10 Compliance**: Scores app posture across all 10 categories (M1-M10) with positive security control detection (Keystore, Keychain, AEAD ciphers, Biometrics, Pinning).
-- **Optional Decompiler Integration**: Automatically uses `apktool`, `jadx`, `dex2jar`, or `cfr` if available on `PATH`.
+- **Optional Decompiler Integration**: When an APK has no sources, masa tries `jadx`, then `dex2jar` + CFR, then `apktool` (smali), using whichever is on `PATH`. CFR is found as a `cfr` wrapper or via `MASA_CFR_JAR=/path/to/cfr.jar`.
 - **Multi-Format Reporting**: Generates interactive HTML dashboards, Markdown summaries, structured JSON reports and SARIF 2.1.0 for code scanning.
 - **CI Gate**: `--fail-on` turns findings into a non-zero exit code, so a pipeline can block on critical or high severity issues.
 
@@ -61,7 +63,8 @@ masa analyze path/to/app.apk -o output_dir/
 # Analyze an iOS IPA
 masa analyze path/to/app.ipa -o output_dir/
 
-# Analyze a unpacked directory (apktool output or source tree)
+# Analyze an unpacked directory (apktool output or a Gradle project;
+# the manifest is found at the root or under src/main/)
 masa analyze path/to/AndroidProject/ -o output_dir/
 ```
 
@@ -70,7 +73,8 @@ masa analyze path/to/AndroidProject/ -o output_dir/
 # List all active security rules
 masa rules
 
-# Filter rules by category (secrets, crypto, storage, network, privacy, etc.)
+# Filter rules by category (secrets, crypto, storage, network, ipc, auth,
+# config, privacy, native, etc.)
 masa rules --category crypto
 ```
 
@@ -135,13 +139,13 @@ scan is not proof that an app is secure.
 |---|---|---|
 | **M1** | Improper Credential Usage | Hardcoded AWS keys, Google API keys, Stripe secret keys, JWTs, private keys, passwords |
 | **M2** | Inadequate Supply Chain Security | Deprecated Apache HTTP client, dynamic code loading (`DexClassLoader`), low target SDKs |
-| **M3** | Insecure Authentication/Authorization | Exposed component receivers without permissions, client-side authorization checks |
+| **M3** | Insecure Authentication/Authorization | Client-side authorization checks, intent redirection, mutable implicit PendingIntents, sticky broadcasts, `checkCallingOrSelfPermission`, caller identity from Intent extras, dynamic receivers without an export flag, biometrics not bound to a key, custom URL schemes |
 | **M4** | Insufficient Input/Output Validation | SQL injection (`rawQuery`), path traversal, dangerous WebView JavaScript bridges |
-| **M5** | Insecure Communication | Cleartext HTTP URLs, ATS bypasses, `TrustAll` certificate manager overrides, hostname verification bypasses |
-| **M6** | Inadequate Privacy Protections | PII/credential logging in logcat/NSLog, hardware ID harvesting (IMEI/MAC), ATT prompt checks |
-| **M7** | Insufficient Binary Protections | Unsafe string functions in native code (`strcpy`, `sprintf`), non-PIE binaries, missing RELRO, executable stack |
-| **M8** | Security Misconfiguration | Debuggable builds, backup enabled without rules (`allowBackup=true`), staging endpoints |
-| **M9** | Insecure Data Storage | Plaintext SharedPreferences, `NSUserDefaults` token storage, world-readable/writable files |
+| **M5** | Insecure Communication | Cleartext HTTP URLs, ATS bypasses, `TrustAll` certificate manager overrides, hostname verification bypasses, user-installed CAs trusted in `network_security_config.xml`, WebView JavaScript |
+| **M6** | Inadequate Privacy Protections | PII/credential logging in logcat/NSLog, hardware ID harvesting (IMEI/MAC), ATT prompt checks, secrets on the clipboard, missing `FLAG_SECURE` |
+| **M7** | Insufficient Binary Protections | Unsafe string functions in native code (`strcpy`, `sprintf`), non-PIE binaries, missing RELRO, executable stack, missing stack canaries, Objective-C without ARC, unencrypted Mach-O, v1-only APK signing |
+| **M8** | Security Misconfiguration | Debuggable builds, backup enabled without rules (`allowBackup=true`), staging endpoints, exported components without permission, providers missing read or write permission, weak or deprecated custom protection levels, root-wide `grant-uri-permission` |
+| **M9** | Insecure Data Storage | Plaintext SharedPreferences, `NSUserDefaults` token storage, world-readable/writable files, `kSecAttrAccessibleAlways` Keychain items, files without Data Protection |
 | **M10** | Insufficient Cryptography | DES/3DES, MD5, SHA-1, RC4, ECB encryption mode, hardcoded IVs, seeded PRNGs |
 
 ---
@@ -181,6 +185,9 @@ pytest --cov=masa
 
 The tests use `unittest` cases and also run under `pytest`. The suite builds
 its own vulnerable APK/IPA fixtures, so no Android SDK or Xcode is required.
+`tests/test_detection.py` pairs every rule with a vulnerable and a safe
+sample, and scans a clean Android project and iOS bundle to catch false
+positives.
 
 ---
 

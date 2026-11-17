@@ -6,6 +6,58 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- Android IPC rules (`ipc` category): intent redirection (IPC-001), mutable
+  implicit PendingIntent (IPC-002), sticky broadcasts (IPC-003),
+  `check/enforceCallingOrSelfPermission` (IPC-004), caller identity from
+  Intent extras or `getCreatorPackage` (IPC-005), dynamic receivers without
+  an export flag (IPC-006).
+- Manifest checks: providers with only read or write permission (CFG-006),
+  components guarded by a `normal`/`dangerous` custom permission (CFG-007),
+  deprecated `signatureOrSystem` (CFG-008), root-wide
+  `grant-uri-permission` (CFG-009). Custom `<permission>` declarations are
+  now parsed from both binary and plain-text manifests.
+- `network_security_config.xml` trusting user CAs outside
+  `<debug-overrides>` (NET-017); `<pin-set>` counts as pinning evidence.
+- WebView JavaScript enabled (NET-018), secrets on the clipboard (PRI-004),
+  no `FLAG_SECURE` (PRI-005).
+- Biometrics used as a yes/no gate without a Keystore/Keychain key, on
+  Android and iOS (ATH-003); custom iOS URL schemes (ATH-004).
+- iOS storage: `kSecAttrAccessibleAlways` (STO-008) and disabled file Data
+  Protection (STO-009).
+- Binary hardening: missing stack canary on ELF and Mach-O (NAT-009),
+  Objective-C without ARC (NAT-010), v1-only APK signing / Janus (BIN-005),
+  unsigned APK (BIN-006, info).
+- dex2jar + CFR decompiler pipeline (CFR via a `cfr` wrapper or
+  `MASA_CFR_JAR`). jadx is now tried first, since the rules target Java
+  source and apktool only yields smali.
+- `tests/test_detection.py`: vulnerable/safe pairs for every new rule plus
+  clean-app false-positive scans.
+
+### Fixed
+
+- `android:exported="false"` in a plain-text manifest was read as the
+  string `"false"`, which is truthy, so private components were reported as
+  exported (CFG-001, high).
+- Manifest findings have no line number, so de-duplication kept only the
+  first exported component and the first dangerous permission.
+- Gradle projects (`app/src/main/AndroidManifest.xml`) failed with
+  "AndroidManifest.xml not found".
+- Exported activities, services and receivers without an intent-filter
+  were never reported. The launcher activity is no longer reported unless
+  it also accepts other actions.
+- Providers protected by `readPermission`/`writePermission` were reported
+  as unprotected.
+- BIN-002 and BIN-003 ("no obfuscation", "no root detection") carried a
+  regex that matched the evidence itself, so they fired on the exact line
+  that proved the protection was there.
+- NET-010 fired on the `xmlns:android` schema URL in every manifest, and
+  NET-001 (high) on the Apple DTD URL in every XML plist.
+- 64-bit Mach-O `cryptid` was read from the padding field, so encrypted
+  App Store binaries were reported as unencrypted (BIN-004).
+- The AXML builder could not write `TYPE_INT_HEX` attributes.
+
 ### Changed
 
 - Minimum Python version is 3.10. Python 3.9 reached end-of-life in October
