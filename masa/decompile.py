@@ -14,13 +14,19 @@ def which(cmd):
     return shutil.which(cmd)
 
 
+CFR_JAR_ENV = "MASA_CFR_JAR"
+
+
 def available_tools():
     found = {}
     for tool in ("apktool", "jadx", "d2j-dex2jar", "dex2jar", "java",
-                 "cfr", "radare2", "r2", "ghidra"):
+                 "cfr", "cfr-decompiler", "radare2", "r2", "ghidra"):
         path = which(tool)
         if path:
             found[tool] = path
+    jar = os.environ.get(CFR_JAR_ENV)
+    if jar and os.path.isfile(jar):
+        found["cfr.jar"] = jar
     return found
 
 
@@ -33,31 +39,68 @@ def _run(cmd, timeout=600):
         return False
 
 
-def decompile_apk(apk_path, out_dir):
-    """Try apktool then jadx to obtain readable source. Returns True on
-    success (source appears under out_dir)."""
-    tools = available_tools()
-    if "apktool" in tools:
-        if _run([tools["apktool"], "d", "-f", "-o", out_dir, apk_path]):
+def _has_sources(out_dir, exts=(".java", ".smali", ".kt")):
+    for _dirpath, _dirs, files in os.walk(out_dir):
+        if any(f.endswith(exts) for f in files):
             return True
-    if "jadx" in tools:
-        try:
-            jadx_bin = tools["jadx"]
-            if os.name == "nt" and not jadx_bin.lower().endswith(".bat"):
-                jadx_bin = jadx_bin + ".bat"
-            if _run([jadx_bin, "-d", out_dir, apk_path]):
-                return True
-        except OSError:
-            pass
     return False
 
 
-def dex_to_java(classes_dex, work_dir):
-    """dex2jar + CFR pipeline for a single classes.dex (if java present).
-    Returns the output jar path or None."""
-    tools = available_tools()
-    if "d2j-dex2jar" in tools and "java" in tools:
-        jar = os.path.join(work_dir, "classes.jar")
-        if _run([tools["d2j-dex2jar"], "-o", jar, classes_dex]):
-            return jar
+def _cfr_command(tools):
+    """Command prefix that runs CFR: a `cfr` wrapper on PATH, or
+    `java -jar $MASA_CFR_JAR`."""
+    for name in ("cfr", "cfr-decompiler"):
+        if name in tools:
+            return [tools[name]]
+    if "cfr.jar" in tools and "java" in tools:
+        return [tools["java"], "-jar", tools["cfr.jar"]]
+    return None
+
+
+def _jadx(tools, apk_path, out_dir):
+    jadx_bin = tools["jadx"]
+    if os.name == "nt" and not jadx_bin.lower().endswith(".bat"):
+        jadx_bin = jadx_bin + ".bat"
+    return _run([jadx_bin, "-d", out_dir, apk_path])
+
+
+def _dex2jar_cfr(tools, apk_path, out_dir):
+    dex2jar = tools.get("d2j-dex2jar") or tools.get("dex2jar")
+    cfr = _cfr_command(tools)
+    if not dex2jar or not cfr:
+        return False
+    os.makedirs(out_dir, exist_ok=True)
+    jar = os.path.join(out_dir, "classes-dex2jar.jar")
+    if not _run([dex2jar, "-f", "-o", jar, apk_path]):
+        return False
+    return _run(cfr + [jar, "--outputdir", out_dir])
+
+
+def _apktool(tools, apk_path, out_dir):
+    return _run([tools["apktool"], "d", "-f", "-o", out_dir, apk_path])
+
+
+# Java source first: the text rules are written against Java/Kotlin, and
+# apktool only yields smali.
+PIPELINE = (("jadx", _jadx), ("dex2jar+cfr", _dex2jar_cfr),
+            ("apktool", _apktool))
+
+
+def decompile_apk(apk_path, out_dir, tools=None):
+    """Decompile with the first tool that produces sources: jadx, then
+    dex2jar+CFR, then apktool. Returns the name of the pipeline used, or
+    None when nothing worked."""
+    tools = available_tools() if tools is None else tools
+    for name, step in PIPELINE:
+        needed = name.split("+")[0]
+        if needed == "dex2jar":
+            if not (tools.get("d2j-dex2jar") or tools.get("dex2jar")):
+                continue
+        elif needed not in tools:
+            continue
+        try:
+            if step(tools, apk_path, out_dir) and _has_sources(out_dir):
+                return name
+        except OSError:
+            continue
     return None

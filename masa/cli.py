@@ -170,7 +170,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     pr = sub.add_parser("rules", help="list detection rules")
     pr.add_argument("--category", help="filter by category "
-                                       "(secrets/crypto/storage/network/...)")
+                                       "(secrets/crypto/storage/network/ipc/"
+                                       "auth/config/privacy/native/...)")
     pr.set_defaults(func=cmd_rules)
 
     pd = sub.add_parser("demo", help="build vulnerable sample APK/IPA and "

@@ -224,6 +224,23 @@ STORAGE = [
          "container.",
          "Use the Keychain and Data Protection class A (file-level "
          "encryption)."),
+    Rule("STO-008", "Keychain Item Always Accessible (iOS)", "high", "M9",
+         "storage",
+         r"\bkSecAttrAccessibleAlways(?:ThisDeviceOnly)?\b|"
+         r"accessibility:\s*\.always\b",
+         "The Keychain item is readable even while the device is locked "
+         "(kSecAttrAccessibleAlways is deprecated), so it is exposed to "
+         "anyone holding the device or a backup.",
+         "Use kSecAttrAccessibleWhenUnlockedThisDeviceOnly (or "
+         "AfterFirstUnlockThisDeviceOnly for background access)."),
+    Rule("STO-009", "File Data Protection Disabled (iOS)", "medium", "M9",
+         "storage",
+         r"\bNSFileProtectionNone\b|\.noFileProtection\b|"
+         r"FileProtectionType\.none\b|protectionKey:\s*\.none\b",
+         "Files are written without Data Protection, so their contents are "
+         "readable while the device is locked and from device images.",
+         "Use .completeFileProtection (NSFileProtectionComplete) for "
+         "sensitive files."),
 ]
 
 # ---------------------------------------------------------------- network
@@ -233,7 +250,7 @@ NETWORK = [
     Rule("NET-001", "Cleartext HTTP URL", "high", "M5", "network",
          r"\bhttp://(?!localhost|127\.0\.0\.1|10\.0\.2\.2|10\.0\.0\.2|"
          r"192\.168\.|\[::1\]|0\.0\.0\.0|schemas\.android\.com|www\.w3\.org|"
-         r"xml\.org)[^\s'\"<>]{5,}",
+         r"(?:www\.)?apple\.com/DTDs|xml\.org|ns\.adobe\.com)[^\s'\"<>]{5,}",
          "Plaintext HTTP traffic can be intercepted or modified on the "
          "wire (eavesdropping, session hijacking, injection).",
          "Use HTTPS exclusively and disable cleartext traffic in the "
@@ -306,7 +323,10 @@ NETWORK = [
          "into logs, proxies and browser history.",
          "Send credentials in the Authorization header over TLS."),
     Rule("NET-010", "Hardcoded API Endpoint", "low", "M5", "network",
-         r"\bhttps?://[a-z0-9.-]+\.[a-z]{2,}[:/][^\s'\"<>]{3,}",
+         r"\bhttps?://(?!(?:schemas\.android\.com|www\.w3\.org|"
+         r"(?:www\.)?apple\.com/DTDs|xml\.org|ns\.adobe\.com|"
+         r"schemas\.microsoft\.com)[:/])"
+         r"[a-z0-9.-]+\.[a-z]{2,}[:/][^\s'\"<>]{3,}",
          "A backend endpoint is hardcoded. Hardcoded endpoints complicate "
          "environment management and may point to staging servers.",
          "Centralize endpoint configuration (e.g. build config, remote "
@@ -331,6 +351,21 @@ NETWORK = [
          "exfiltration.",
          "Remove the interface or expose it only to fully trusted content "
          "over HTTPS with strict origin checks."),
+    Rule("NET-017", "User-Installed CAs Trusted (Android)", "high", "M5",
+         "network", None,
+         "network_security_config.xml trusts user-added certificate "
+         "authorities outside <debug-overrides>, so any CA the user (or "
+         "malware, or an MDM profile) installs can intercept TLS.",
+         "Trust only system CAs in release builds; keep "
+         "<certificates src=\"user\"/> inside <debug-overrides>."),
+    Rule("NET-018", "WebView JavaScript Enabled", "low", "M5", "network",
+         r"(?i)setJavaScriptEnabled\s*\(\s*true\b|"
+         r"javaScriptEnabled\s*=\s*true\b",
+         "JavaScript is enabled in a WebView. On its own this is common, "
+         "but it turns any content injection (cleartext, XSS, open "
+         "redirects) into script execution inside the app.",
+         "Enable JavaScript only for WebViews that load trusted HTTPS "
+         "content, and keep file access and JS bridges off."),
 ]
 
 # ---------------------------------------------------------------- logging
@@ -371,6 +406,21 @@ AUTH = [
          "Authorization decisions are made purely client-side and can be "
          "bypassed by modifying the app or its storage.",
          "Enforce authorization server-side on every request."),
+    Rule("ATH-003", "Biometric Auth Not Bound to a Key", "high", "M3",
+         "auth", None,
+         "Biometric authentication is used as a yes/no check (LAContext."
+         "evaluatePolicy / BiometricPrompt without a CryptoObject). A hook "
+         "such as Frida flips the result and skips the check entirely.",
+         "Gate a Keychain/Keystore key on biometrics (SecAccessControl "
+         "with .biometryCurrentSet, or BiometricPrompt with a "
+         "CryptoObject) and use that key to unlock the secret."),
+    Rule("ATH-004", "Custom URL Scheme Registered (iOS)", "low", "M3",
+         "auth", None,
+         "The app registers custom URL schemes. Any other app can claim "
+         "the same scheme, so links carrying tokens or actions can be "
+         "intercepted or forged.",
+         "Prefer Universal Links for anything sensitive, and validate "
+         "every parameter received through a URL scheme."),
 ]
 
 # ---------------------------------------------------------------- input
@@ -428,6 +478,25 @@ PRIVACY = [
          "equivalent consent flow.",
          "Add NSUserTrackingUsageDescription and request ATT consent "
          "before accessing the Advertising ID."),
+    Rule("PRI-004", "Sensitive Data Copied to Clipboard", "medium", "M6",
+         "privacy",
+         r"(?i)(?:ClipData\.newPlainText|setPrimaryClip|"
+         r"UIPasteboard\.general\.(?:string|setString|items|"
+         r"setValue))[^\n]{0,120}\b(?:password|passwd|token|otp|pin|secret|"
+         r"iban|card|cvv|seed|mnemonic|private[_-]?key)\b",
+         "Sensitive data is placed on the system clipboard, where other "
+         "apps (and on iOS, Universal Clipboard on other devices) can read "
+         "it.",
+         "Avoid copying secrets; if needed, mark the clip sensitive "
+         "(ClipDescription.EXTRA_IS_SENSITIVE / UIPasteboard localOnly + "
+         "expirationDate)."),
+    Rule("PRI-005", "No Screenshot Protection (FLAG_SECURE)", "low", "M6",
+         "privacy", None,
+         "No FLAG_SECURE usage was found. Screens showing account data can "
+         "be captured by screenshots, screen recording and the recent-apps "
+         "thumbnail.",
+         "Set WindowManager.LayoutParams.FLAG_SECURE on screens that show "
+         "sensitive data."),
 ]
 
 # ---------------------------------------------------------------- config
@@ -502,24 +571,49 @@ CONFIG = [
          "A staging/test endpoint is reachable from the shipped app; it may "
          "leak production credentials or accept test data.",
          "Remove staging endpoints from release builds."),
+    Rule("CFG-006", "Content Provider Partially Protected", "medium", "M8",
+         "config", None,
+         "An exported content provider sets only readPermission or only "
+         "writePermission, so the other direction is open to every app.",
+         "Set both android:readPermission and android:writePermission "
+         "(signature level), or a single android:permission."),
+    Rule("CFG-007", "Component Guarded by Weak Custom Permission", "high",
+         "M8", "config", None,
+         "An exported component is protected by a custom permission whose "
+         "protectionLevel is normal or dangerous. Any app can request a "
+         "normal permission, so the guard does not keep other apps out.",
+         "Use android:protectionLevel=\"signature\" (or "
+         "signature|knownSigner for partner apps)."),
+    Rule("CFG-008", "Deprecated signatureOrSystem Protection Level", "low",
+         "M8", "config", None,
+         "A custom permission uses signatureOrSystem, deprecated since API "
+         "23. Pre-installed system apps also get it.",
+         "Use protectionLevel=\"signature\" (add |privileged only for "
+         "platform apps)."),
+    Rule("CFG-009", "Overly Broad URI Permission Grant", "high", "M8",
+         "config", None,
+         "A <grant-uri-permission> covers the whole provider (path=\"/\", "
+         "pathPrefix=\"/\" or pathPattern=\".*\"), so one granted URI "
+         "can expose every row or file it serves.",
+         "Scope grants to a dedicated sub-path such as "
+         "pathPrefix=\"/shared/\"."),
 ]
 
 # ---------------------------------------------------------------- binary
 # OWASP M7 - Insufficient Binary Protections
 
 BINARY = [
+    # BIN-002/BIN-003 are absence rules: apk.py/ipa.py emit them when the
+    # EVIDENCE pattern is NOT found. They must not carry a regex, or the
+    # scanner reports them on the very line that proves the protection.
     Rule("BIN-002", "No Code Obfuscation/Minification Evidence", "low", "M7",
-         "binary",
-         r"(?i)(?:minifyEnabled|isMinifyEnabled|ProGuard|proguard|R8|"
-         r"obfuscate|dashO|dexguard)",
+         "binary", None,
          "No obfuscation/minification evidence found. Unobfuscated class "
          "names and strings make reverse engineering and secret hunting "
          "trivial.",
          "Enable R8/ProGuard with obfuscation for release builds."),
     Rule("BIN-003", "No Root/Jailbreak Detection Evidence", "low", "M7",
-         "binary",
-         r"(?i)(?:RootBeer|isRooted|rootDetection|detectRoot|jailbroken|"
-         r"JBDetection|FridaServer|isJailbroken|tamper)",
+         "binary", None,
          "No root/jailbreak or tamper detection evidence found, leaving the "
          "app unprotected against instrumented environments.",
          "Add root/emulator/tamper detection with a server-side risk "
@@ -531,6 +625,84 @@ BINARY = [
          "App Store builds normally enable encryption.",
          "Distribute through the App Store (which encrypts binaries) and "
          "add integrity checks."),
+    Rule("BIN-005", "APK Signed Only With v1 Scheme (Janus)", "high", "M7",
+         "binary", None,
+         "The APK carries only a JAR (v1) signature. v1 does not protect "
+         "the whole file, and on Android 5.0-8.0 it allows the Janus attack "
+         "(CVE-2017-13156): code prepended to a signed APK still passes "
+         "verification.",
+         "Sign with APK Signature Scheme v2 or v3 (default in apksigner and "
+         "the Android Gradle Plugin)."),
+    Rule("BIN-006", "APK Is Not Signed", "info", "M7", "binary", None,
+         "No v1 signature files and no APK Signing Block were found. "
+         "Android refuses to install unsigned APKs; this is usually a build "
+         "intermediate.",
+         "Analyse the signed release artifact."),
+]
+
+# ---------------------------------------------------------------- ipc
+# OWASP M3 - Insecure Authentication/Authorization (Android IPC)
+
+IPC = [
+    Rule("IPC-001", "Intent Redirection (Unvalidated Nested Intent)", "high",
+         "M3", "ipc",
+         r"\bIntent\s+(\w+)\s*=\s*[^;\n]*getParcelableExtra\s*\([^;\n]*;"
+         r"(?:(?!sanitiz)[\s\S]){0,600}?\b(?:startActivit(?:y|yForResult|ies)|"
+         r"startService|startForegroundService|sendBroadcast|bindService)"
+         r"\s*\(\s*\1\b|"
+         r"\b(?:val|var)\s+(\w+)\b[^\n]*getParcelableExtra\b[^\n]*\bIntent\b"
+         r"(?:(?!sanitiz)[\s\S]){0,600}?\b(?:startActivit(?:y|yForResult|ies)|"
+         r"startService|startForegroundService|sendBroadcast|bindService)"
+         r"\s*\(\s*\2\b",
+         "An Intent taken from another Intent's extras is launched without "
+         "validation. A malicious app can make this app open its private, "
+         "non-exported components or grant URI permissions on its behalf.",
+         "Sanitize with androidx IntentSanitizer, or resolve the target and "
+         "check package and class against an allowlist; strip "
+         "FLAG_GRANT_*_URI_PERMISSION."),
+    Rule("IPC-002", "Mutable Implicit PendingIntent", "high", "M3", "ipc",
+         r"PendingIntent\.get(?:Activity|Activities|Service|Broadcast|"
+         r"ForegroundService)\s*\([^;\n]*\bIntent\s*\(\s*(?:\"|"
+         r"Intent\.ACTION_|[A-Z][A-Z0-9_]{2,}\s*[,)])[^;\n]*\bFLAG_MUTABLE\b",
+         "A mutable PendingIntent wraps an implicit Intent. The app that "
+         "receives it can fill in the target and act with this app's "
+         "identity and permissions.",
+         "Use FLAG_IMMUTABLE, or set an explicit component on the base "
+         "Intent when mutability is required."),
+    Rule("IPC-003", "Sticky Broadcast Sent", "medium", "M3", "ipc",
+         r"\bsendSticky(?:Ordered)?Broadcast(?:AsUser)?\b",
+         "Sticky broadcasts are deprecated and readable by any app, with no "
+         "permission check on who receives or replaces them.",
+         "Use explicit broadcasts with a signature permission, or an "
+         "in-app observer (Flow, LiveData)."),
+    Rule("IPC-004", "Caller Permission Check Falls Back to Self", "medium",
+         "M3", "ipc",
+         r"\b(?:enforce|check)CallingOrSelf(?:Uri)?Permission\b",
+         "checkCallingOrSelfPermission/enforceCallingOrSelfPermission "
+         "succeed when called outside a Binder transaction, because they "
+         "fall back to this app's own permissions (confused deputy).",
+         "Use checkCallingPermission/enforceCallingPermission inside the "
+         "IPC method."),
+    Rule("IPC-005", "Caller Identity Taken From Intent Extras", "medium",
+         "M3", "ipc",
+         r"(?i)getStringExtra\s*\(\s*[\"'](?:calling[_-]?package|caller|"
+         r"caller[_-]?package|sender|sender[_-]?package|source[_-]?package|"
+         r"package[_-]?name|package)[\"']|"
+         r"\bgetCreator(?:Package|Uid)\s*\(",
+         "The caller's identity is read from data the caller controls "
+         "(an Intent extra) or from PendingIntent.getCreatorPackage(), "
+         "both of which can be forged or replayed.",
+         "Authenticate with Binder.getCallingUid() and "
+         "PackageManager.hasSigningCertificate()."),
+    Rule("IPC-006", "Dynamic Receiver Without Export Flag", "medium", "M3",
+         "ipc",
+         r"\bregisterReceiver\s*\((?![^;\n]*RECEIVER_(?:NOT_)?EXPORTED)"
+         r"[^;\n]*\)",
+         "A runtime BroadcastReceiver is registered without "
+         "RECEIVER_NOT_EXPORTED, so other apps can send it broadcasts "
+         "(and on Android 14+ the call throws for non-system actions).",
+         "Pass ContextCompat.RECEIVER_NOT_EXPORTED (or RECEIVER_EXPORTED "
+         "with a signature permission when external senders are needed)."),
 ]
 
 # ---------------------------------------------------------------- supply chain
@@ -601,12 +773,25 @@ NATIVE = [
          "The stack is marked executable (PT_GNU_STACK with PF_X), "
          "facilitating shellcode execution.",
          "Link with -Wl,-z,noexecstack."),
+    Rule("NAT-009", "No Stack Canary in Native Binary", "medium", "M7",
+         "native", None,
+         "The binary does not import __stack_chk_fail, so it was built "
+         "without stack protection and stack buffer overflows are not "
+         "detected at runtime.",
+         "Build with -fstack-protector-strong (default in recent NDKs and "
+         "Xcode)."),
+    Rule("NAT-010", "Objective-C Without ARC (iOS)", "low", "M7", "native",
+         None,
+         "The binary uses the Objective-C runtime but does not import "
+         "objc_release, which indicates manual reference counting and a "
+         "higher risk of use-after-free bugs.",
+         "Compile Objective-C with -fobjc-arc."),
 ]
 
 from typing import List, Optional, Tuple
 
 ALL_RULES: Tuple[Rule, ...] = tuple(SECRETS + CRYPTO + STORAGE + NETWORK + LOGGING + AUTH + INPUT +
-                                  PRIVACY + CONFIG + BINARY + SUPPLYCHAIN + NATIVE)
+                                  PRIVACY + CONFIG + BINARY + IPC + SUPPLYCHAIN + NATIVE)
 
 BY_ID = {r.id: r for r in ALL_RULES}
 

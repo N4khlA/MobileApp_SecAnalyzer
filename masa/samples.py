@@ -136,6 +136,27 @@ public class MainActivity extends Activity {
 
         // M3: client-side authorization
         if (isAdmin()) { startActivity(new android.content.Intent(this, AdminActivity.class)); }
+
+        forwardIntent();
+        notifyLater();
+    }
+
+    // --- M3: insecure IPC -----------------------------------------------
+    private void forwardIntent() {
+        Intent next = getIntent().getParcelableExtra("next_intent");
+        startActivity(next);                                   // intent redirection
+        String caller = getIntent().getStringExtra("calling_package");
+        enforceCallingOrSelfPermission("com.vulnbank.demo.permission.ADMIN", "denied");
+        registerReceiver(new SmsReceiver(), new android.content.IntentFilter("com.vulnbank.SYNC"));
+        sendStickyBroadcast(new Intent("com.vulnbank.BALANCE_CHANGED"));
+    }
+
+    private void notifyLater() {
+        android.app.PendingIntent pi = android.app.PendingIntent.getActivity(this, 0, new Intent("com.vulnbank.OPEN"), android.app.PendingIntent.FLAG_MUTABLE);
+        android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(android.content.ClipData.newPlainText("otp", "otp code: " + AUTH_TOKEN));
+        androidx.biometric.BiometricPrompt prompt = new androidx.biometric.BiometricPrompt(this, executor, callback);
+        prompt.authenticate(promptInfo);                       // boolean gate, no key
     }
 
     private boolean isAdmin() { return true; }   // client-side admin check
@@ -213,6 +234,8 @@ DEX_STRINGS = [
     "android.permission.READ_SMS", "android.permission.CAMERA",
     "org.apache.http.impl.client.DefaultHttpClient",
     "DexClassLoader",
+    "sendStickyBroadcast", "enforceCallingOrSelfPermission",
+    "Landroidx/biometric/BiometricPrompt;", "authenticate",
 ]
 
 # =====================================================================
@@ -258,6 +281,8 @@ INFO_PLIST = {
     "CFBundleSupportedPlatforms": ["iPhoneOS"],
     "UIRequiredDeviceCapabilities": ["arm64"],
     "UIBackgroundModes": ["location"],
+    "CFBundleURLTypes": [{"CFBundleURLName": "com.vulnbank.demo",
+                          "CFBundleURLSchemes": ["vulnbank"]}],
     "NSAppTransportSecurity": {
         "NSAllowsArbitraryLoads": True,
         "NSExceptionDomains": {
@@ -295,6 +320,11 @@ MACHO_PAYLOAD = (
     b"getDeviceId\x00" +
     b"ASIdentifierManager\x00" +
     b"strcpy(dst, src);\x00" +
+    b"_objc_msgSend\x00" +
+    b"kSecAttrAccessibleAlways\x00" +
+    b"NSFileProtectionNone\x00" +
+    b"LAContext\x00evaluatePolicy:localizedReason:reply:\x00" +
+    b"UIPasteboard.general.string = password\x00" +
     b"VulnBank.app/VulnBank\x00" +
     b"MD5\x00"
 )
@@ -335,6 +365,13 @@ def build_android_manifest():
     sdk.attrs = [_attr("minSdkVersion", 21, axml.TYPE_INT_DEC),
                  _attr("targetSdkVersion", 26, axml.TYPE_INT_DEC)]
     m.children.append(sdk)
+    weak = axml.Element(None, "permission")
+    weak.attrs = [_attr("name", "com.vulnbank.demo.permission.TRANSFER"),
+                  _attr("protectionLevel", 0, axml.TYPE_INT_HEX)]
+    old_style = axml.Element(None, "permission")
+    old_style.attrs = [_attr("name", "com.vulnbank.demo.permission.ADMIN"),
+                       _attr("protectionLevel", 3, axml.TYPE_INT_HEX)]
+    m.children.extend([weak, old_style])
     for perm in ("android.permission.INTERNET",
                  "android.permission.CAMERA",
                  "android.permission.RECORD_AUDIO",
@@ -376,13 +413,34 @@ def build_android_manifest():
     filt2.children = [a2]
     recv.children = [filt2]
     app.children.append(recv)
+    svc = axml.Element(None, "service")
+    svc.attrs = [_attr("name", ".TransferService"),
+                 _attr("exported", True, axml.TYPE_BOOLEAN),
+                 _attr("permission", "com.vulnbank.demo.permission.TRANSFER")]
+    app.children.append(svc)
+    prov = axml.Element(None, "provider")
+    prov.attrs = [_attr("name", ".StatementProvider"),
+                  _attr("authorities", "com.vulnbank.demo.statements"),
+                  _attr("exported", True, axml.TYPE_BOOLEAN),
+                  _attr("readPermission",
+                        "com.vulnbank.demo.permission.ADMIN"),
+                  _attr("grantUriPermissions", True, axml.TYPE_BOOLEAN)]
+    grant = axml.Element(None, "grant-uri-permission")
+    grant.attrs = [_attr("pathPrefix", "/")]
+    prov.children = [grant]
+    app.children.append(prov)
     m.children.append(app)
     return axml.Builder().build([m])
 
 
 NETWORK_CONFIG = """<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">api.insecure-bank.com</domain>
     </domain-config>

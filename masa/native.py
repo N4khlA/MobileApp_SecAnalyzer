@@ -136,7 +136,9 @@ def macho_info(data):
         if cmdsize < 8:
             break
         if cmd in (LC_ENCRYPTION_INFO, LC_ENCRYPTION_INFO_64):
-            cryptid_off = pos + 20 if cmd == LC_ENCRYPTION_INFO_64 else pos + 16
+            # cmd, cmdsize, cryptoff, cryptsize, cryptid: +16 in both the
+            # 32- and 64-bit command (the 64-bit one only adds trailing pad)
+            cryptid_off = pos + 16
             if cryptid_off + 4 <= len(data):
                 encrypted = struct.unpack_from(endian + "I", data, cryptid_off)[0]
         pos += cmdsize
@@ -170,6 +172,21 @@ _STRUCTURAL_RULES = {
                        "(PT_GNU_STACK with PF_X), facilitating shellcode "
                        "execution.",
                        remediation="Link with -Wl,-z,noexecstack."),
+    "no_canary": Rule("NAT-009", "No Stack Canary in Native Binary",
+                      "medium", "M7", "native",
+                      description="The binary does not import "
+                      "__stack_chk_fail, so it was built without stack "
+                      "protection and stack buffer overflows are not "
+                      "detected at runtime.",
+                      remediation="Build with -fstack-protector-strong "
+                      "(default in recent NDKs and Xcode)."),
+    "no_arc": Rule("NAT-010", "Objective-C Without ARC (iOS)", "low", "M7",
+                   "native",
+                   description="The binary uses the Objective-C runtime but "
+                   "does not import objc_release, which indicates manual "
+                   "reference counting and a higher risk of use-after-free "
+                   "bugs.",
+                   remediation="Compile Objective-C with -fobjc-arc."),
     "not_encrypted": Rule("BIN-004", "Mach-O Binary Not Encrypted", "medium",
                           "M7", "binary",
                           description="The Mach-O main binary has no "
@@ -206,6 +223,8 @@ def analyze_binary(data, filename):
                                         file=filename,
                                         evidence_type="binary",
                                         extra={"binary_protection": "exec_stack"}))
+            _hardening_findings(info.get("strings", []), filename, findings,
+                                check_arc=False)
     else:
         info = macho_info(data)
         if info is not None:
@@ -222,3 +241,24 @@ def _macho_findings(info, filename, findings):
         findings.append(Finding(_STRUCTURAL_RULES["not_encrypted"],
                                 file=filename, evidence_type="binary",
                                 extra={"binary_protection": "not_encrypted"}))
+    _hardening_findings(info.get("strings", []), filename, findings,
+                        check_arc=True)
+
+
+def _has_symbol(strings, name):
+    return any(name in s for s in strings)
+
+
+def _hardening_findings(strings, filename, findings, check_arc):
+    """Compiler hardening is visible through imported symbol names:
+    -fstack-protector imports __stack_chk_fail, ARC imports objc_release."""
+    if not _has_symbol(strings, "__stack_chk_fail") and \
+            not _has_symbol(strings, "__stack_chk_guard"):
+        findings.append(Finding(_STRUCTURAL_RULES["no_canary"],
+                                file=filename, evidence_type="binary",
+                                extra={"binary_protection": "no_canary"}))
+    if check_arc and _has_symbol(strings, "objc_msgSend") and \
+            not _has_symbol(strings, "objc_release"):
+        findings.append(Finding(_STRUCTURAL_RULES["no_arc"],
+                                file=filename, evidence_type="binary",
+                                extra={"binary_protection": "no_arc"}))

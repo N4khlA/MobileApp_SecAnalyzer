@@ -16,7 +16,7 @@ import tempfile
 
 from . import archive, native, scanner
 from . import plist as bplist
-from .apk import AnalysisResult, _dedupe, _rule
+from .apk import AnalysisResult, _dedupe, _rule, biometric_binding_finding
 from .coverage import TOO_LARGE, human_size, is_media
 from .models import Finding, PositiveCheck
 from .rules import ALL_RULES
@@ -176,6 +176,9 @@ def analyze_ipa(input_path, out_dir=None):
                 findings.append(Finding(_rule(rid), file="(app)",
                                         evidence_type="behavior",
                                         extra={"absent": True}))
+        biometric = biometric_binding_finding(pool)
+        if biometric:
+            findings.append(biometric)
 
         result.findings = _dedupe(findings)
         return result
@@ -212,6 +215,17 @@ def _plist_checks(result, findings, info, plist_path, extra=False):
                                         extra={"MinimumOSVersion": min_os}))
         except (TypeError, ValueError):
             pass
+
+    if not extra:
+        schemes = []
+        for entry in info.get("CFBundleURLTypes") or []:
+            if isinstance(entry, dict):
+                schemes.extend(str(x) for x in
+                               entry.get("CFBundleURLSchemes") or [])
+        if schemes:
+            findings.append(Finding(_rule("ATH-004"), file=plist_path,
+                                    evidence_type="config",
+                                    extra={"schemes": sorted(set(schemes))}))
 
     if info.get("NSUserTrackingUsageDescription"):
         result.positives.append(PositiveCheck(

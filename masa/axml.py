@@ -323,6 +323,12 @@ class Builder:
             self.intern(str(data))
             a.raw = str(data)
             raw = self._idx(a.raw)
+        elif a.dtype == TYPE_INT_HEX:
+            # flag values such as protectionLevel; aapt stores no raw string
+            data = a.data if a.data is not None else int(a.raw)
+            raw = 0xFFFFFFFF
+        else:
+            raise ValueError("unsupported attribute type 0x%02x" % a.dtype)
         return struct.pack("<IIIHBBi",
                            self._idx(a.ns), self._idx(a.name),
                            raw, 0x0014, 0, a.dtype, data)

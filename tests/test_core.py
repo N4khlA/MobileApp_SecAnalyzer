@@ -38,7 +38,12 @@ class TestAxml(unittest.TestCase):
         self.assertEqual(info.target_sdk, 26)
         self.assertIn("android.permission.CAMERA", info.permissions)
         self.assertIn("android.permission.INTERNET", info.permissions)
-        self.assertEqual(len(info.components), 3)
+        self.assertEqual(len(info.components), 5)
+        self.assertEqual(info.custom_permissions, {
+            "com.vulnbank.demo.permission.TRANSFER": "normal",
+            "com.vulnbank.demo.permission.ADMIN": "signatureOrSystem"})
+        prov = [c for c in info.components if c["type"] == "provider"][0]
+        self.assertEqual(prov["uri_grants"], [{"pathPrefix": "/"}])
         main = [c for c in info.components if c["name"] == ".MainActivity"][0]
         self.assertTrue(main["exported"])
         self.assertIn("android.intent.action.MAIN", main["actions"])
@@ -67,6 +72,65 @@ class TestAxml(unittest.TestCase):
         self.assertEqual(info.target_sdk, "33")
         self.assertEqual(info.app.get("allowBackup"), "false")
         self.assertFalse(info.components[1]["exported"])
+
+
+class TestManifestRegressions(unittest.TestCase):
+    """Bugs found by auditing with the android-*-security skills."""
+
+    MANIFEST = """<?xml version="1.0"?>
+    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.test.regress">
+      <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34"/>
+      <uses-permission android:name="android.permission.CAMERA"/>
+      <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+      <application android:allowBackup="false">
+        <activity android:name=".Private" android:exported="false">
+          <intent-filter><action android:name="com.x.A"/></intent-filter>
+        </activity>
+        <activity android:name=".Open1" android:exported="true">
+          <intent-filter><action android:name="com.x.B"/></intent-filter>
+        </activity>
+        <service android:name=".Open2" android:exported="true">
+          <intent-filter><action android:name="com.x.C"/></intent-filter>
+        </service>
+      </application>
+    </manifest>"""
+
+    def _tree(self, rel):
+        tmp = tempfile.mkdtemp(prefix="masa_regress_")
+        path = os.path.join(tmp, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(self.MANIFEST)
+        return tmp
+
+    def test_explicit_exported_false_is_false(self):
+        info = parse_manifest_bytes(self.MANIFEST.encode())
+        exported = {c["name"]: c["exported"] for c in info.components}
+        self.assertIs(exported[".Private"], False)
+        self.assertIs(exported[".Open1"], True)
+
+    def test_one_finding_per_component_and_permission(self):
+        result = analyze_apk(self._tree("AndroidManifest.xml"),
+                             use_decompiler=False)
+        comps = sorted(f.extra["component"] for f in result.findings
+                       if f.rule.id == "CFG-001")
+        self.assertEqual(comps, [".Open1", ".Open2"])
+        perms = {f.extra["permission"] for f in result.findings
+                 if f.rule.id == "PERM-001"}
+        self.assertEqual(perms, {"android.permission.CAMERA",
+                                 "android.permission.RECORD_AUDIO"})
+
+    def test_gradle_layout_manifest_found(self):
+        tmp = self._tree(os.path.join("app", "src", "main",
+                                      "AndroidManifest.xml"))
+        result = analyze_apk(tmp, use_decompiler=False)
+        self.assertEqual(result.manifest.package, "com.test.regress")
+        self.assertEqual(result.manifest_path,
+                         "app/src/main/AndroidManifest.xml")
+        cfg = [f for f in result.findings if f.rule.id == "CFG-001"]
+        self.assertTrue(cfg)
+        self.assertTrue(all(f.file == result.manifest_path for f in cfg))
 
 
 class TestPlist(unittest.TestCase):
