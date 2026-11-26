@@ -118,12 +118,12 @@ steps:
     with:
       target: app/build/outputs/apk/release/app-release.apk
       fail-on: high
-      # baseline: masa-baseline.json   # only new findings fail
+      # args: --baseline masa-baseline.json   # only new findings fail
 ```
 
 Inputs: `target` (required), `fail-on` (default `high`), `sarif` (default
-`masa.sarif`), `baseline`, `strict`, `upload-sarif` (default `true`) and
-`args` for extra `masa analyze` flags. SARIF is uploaded before the gate is
+`masa.sarif`), `upload-sarif` (default `true`) and `args` for any other
+`masa analyze` flags, such as `--baseline masa-baseline.json --strict`. SARIF is uploaded before the gate is
 applied, so the alerts are visible even when the job fails.
 
 ### Suppressing findings
@@ -148,7 +148,7 @@ path = "res/values/*.xml"
 reason = "Maps key restricted to our package + signing cert"
 
 [[ignore]]
-path = "assets/vendor/"
+path = "assets/vendor/*"
 reason = "third-party SDK, tracked upstream"
 ```
 

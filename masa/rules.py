@@ -805,8 +805,6 @@ BY_ID = {r.id: r for r in ALL_RULES}
 # strings, in source, or in text files without a known extension. Secrets
 # and endpoints are reported wherever they ship, documentation included.
 
-ALL_KINDS: FrozenSet[str] = frozenset(
-    {"source", "native_source", "config", "doc", "dex", "native", "other"})
 CODE_KINDS: FrozenSet[str] = frozenset(
     {"source", "native_source", "dex", "native", "other"})
 NATIVE_KINDS: FrozenSet[str] = frozenset({"native_source", "native", "other"})

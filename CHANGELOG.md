@@ -14,12 +14,12 @@ command and the import name stay `masa`.
 - Suppressions: inline `masa-ignore` / `masa-ignore: ID[, ID] -- reason`
   comments, on the finding's line or on a comment line just above it, and a
   `.masa.toml` / `.masa.json` config with `[[ignore]]` entries (`rule`,
-  `path` glob or `dir/` prefix, required `reason`). Suppressed findings move
+  `path` glob, required `reason`). Suppressed findings move
   to `suppressed` in JSON and carry SARIF `suppressions`; they no longer
-  fail the gate or count toward the grade. `--config PATH`, `--no-config`.
+  fail the gate or count toward the grade. `--config PATH` picks the file.
 - Baseline mode: `--baseline old.report.json` keeps findings already in an
   earlier report as `baselined` (SARIF `baselineState: unchanged`), and only
-  new ones fail the gate. Reports from 1.2 work as baselines.
+  new ones fail the gate. Baselines must come from masa 1.3 or later.
 - Every finding has a `fingerprint` (rule, file, normalised snippet, extra
   fields; no line number), so it survives code moving around.
 - CWE and OWASP MASVS v2 ids on every rule (`masa/taxonomy.py`), in JSON,

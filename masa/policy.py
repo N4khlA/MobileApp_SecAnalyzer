@@ -5,7 +5,7 @@ findings with a reason:
 
     [[ignore]]
     rule = "SEC-006"              # optional: omit to match every rule
-    path = "res/values/*.xml"     # optional: glob, or a "dir/" prefix
+    path = "res/values/*.xml"     # optional: glob ("*" crosses "/")
     reason = "public demo key"    # required
 
 A baseline is an earlier JSON report. Findings whose fingerprint appears in it
@@ -18,7 +18,7 @@ import os
 from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from .models import Finding, fingerprint
+from .models import Finding
 
 CONFIG_NAMES = (".masa.toml", ".masa.json")
 
@@ -72,16 +72,6 @@ def load_config(path: str) -> Dict[str, Any]:
     return {"path": path, "ignore": ignores}
 
 
-def _path_matches(pattern: str, file: Optional[str]) -> bool:
-    if not file:
-        return False
-    file = file.replace("\\", "/")
-    pattern = pattern.replace("\\", "/")
-    if pattern.endswith("/"):
-        return file.startswith(pattern)
-    return fnmatch.fnmatchcase(file, pattern)
-
-
 def apply_ignores(findings: Iterable[Finding],
                   ignores: List[Dict[str, Any]]) -> int:
     """Mark findings matched by a config entry as suppressed. Inline
@@ -95,7 +85,8 @@ def apply_ignores(findings: Iterable[Finding],
             path = entry.get("path")
             if rule and rule != f.rule.id:
                 continue
-            if path and not _path_matches(path, f.file):
+            if path and not fnmatch.fnmatchcase(
+                    (f.file or "").replace("\\", "/"), path):
                 continue
             f.suppression = {"kind": "external",
                              "justification": str(entry["reason"]).strip()}
@@ -117,8 +108,10 @@ def load_baseline(path: str) -> Counter:
     prints: Counter = Counter()
     for key in ("findings", "baselined", "suppressed"):
         for f in data.get(key) or []:
-            # reports from masa <= 1.2 carry no fingerprint
-            prints[f.get("fingerprint") or fingerprint(f)] += 1
+            if "fingerprint" not in f:
+                raise ValueError("baseline %s was made by masa < 1.3; "
+                                 "regenerate it" % path)
+            prints[f["fingerprint"]] += 1
     return prints
 
 

@@ -15,23 +15,12 @@ inputs:
   sarif:
     description: Where to write the SARIF report
     default: masa.sarif
-  baseline:
-    description: Optional earlier masa JSON report; only new findings fail the job
-    default: ""
-  strict:
-    description: Also fail when some files could not be analysed (true/false)
-    default: "false"
   upload-sarif:
     description: Upload the SARIF to GitHub code scanning (needs security-events write)
     default: "true"
   args:
-    description: Extra arguments for masa analyze
+    description: Extra masa analyze flags, e.g. --baseline masa-baseline.json --strict
     default: ""
-
-outputs:
-  sarif:
-    description: Path of the SARIF report
-    value: ${{ inputs.sarif }}
 
 runs:
   using: composite
@@ -57,17 +46,11 @@ runs:
         TARGET: ${{ inputs.target }}
         FAIL_ON: ${{ inputs.fail-on }}
         SARIF: ${{ inputs.sarif }}
-        BASELINE: ${{ inputs.baseline }}
-        STRICT: ${{ inputs.strict }}
         EXTRA: ${{ inputs.args }}
       run: |
-        cmd=(masa analyze "$TARGET" --sarif "$SARIF" --fail-on "$FAIL_ON")
-        [ -n "$BASELINE" ] && cmd+=(--baseline "$BASELINE")
-        [ "$STRICT" = "true" ] && cmd+=(--strict)
-        # word-split EXTRA on purpose, without glob expansion
-        set -f; [ -n "$EXTRA" ] && cmd+=($EXTRA); set +f
-        set +e
-        "${cmd[@]}"
+        # EXTRA is word-split on purpose; set -f stops glob expansion
+        set -f +e
+        masa analyze "$TARGET" --sarif "$SARIF" --fail-on "$FAIL_ON" $EXTRA
         code=$?
         set -e
         echo "exit-code=$code" >> "$GITHUB_OUTPUT"

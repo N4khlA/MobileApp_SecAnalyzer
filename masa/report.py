@@ -24,7 +24,6 @@ from .models import (
     SEVERITY_ORDER,
     SEVERITY_WEIGHTS,
 )
-from .taxonomy import cwe_tag
 
 TOOL_NAME = "Mobile App Security Analyzer (masa)"
 TOOL_VERSION = __version__
@@ -398,7 +397,10 @@ def build_sarif(data):
         meta = refs.get(rid, {})
         severity = meta.get("severity") or severities[rid]
         tags = ["security", meta.get("owasp", "")]
-        tags += [t for t in (cwe_tag(meta.get("cwe")), meta.get("masvs")) if t]
+        if meta.get("cwe"):
+            tags.append("external/cwe/" + meta["cwe"].lower())
+        if meta.get("masvs"):
+            tags.append(meta["masvs"])
         rules.append({
             "id": rid,
             "name": rid,

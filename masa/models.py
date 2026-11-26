@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import re
 from typing import Any, Dict, FrozenSet, List, Optional
 
 SEVERITY_WEIGHTS: Dict[str, int] = {
@@ -141,6 +140,14 @@ class Finding:
     def severity(self) -> str:
         return self.rule.severity
 
+    def fingerprint(self) -> str:
+        """Same finding across scans: rule, file, whitespace-normalised
+        snippet and extra fields, but not the line, which shifts on edits."""
+        extra = {k: v for k, v in self.extra.items() if k != "context"}
+        return stable_id("|".join([
+            self.rule.id, self.file or "", " ".join(self.snippet.split()),
+            json.dumps(extra, sort_keys=True, default=str)]))
+
     @property
     def owasp(self) -> str:
         return self.rule.owasp
@@ -155,7 +162,7 @@ class Finding:
             "evidence_type": self.evidence_type,
         })
         d.update(self.extra)
-        d["fingerprint"] = fingerprint(d)
+        d["fingerprint"] = self.fingerprint()
         if self.suppression:
             d["suppression"] = dict(self.suppression)
         return d
@@ -188,28 +195,3 @@ def stable_id(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:12]
 
 
-
-_WS = re.compile(r"\s+")
-_FP_SKIP = {"line", "context", "fingerprint", "suppression"}
-
-
-def fingerprint(finding: Dict[str, Any]) -> str:
-    """Identify a finding across scans without using its line number.
-
-    Lines shift whenever code above them changes, so the fingerprint uses
-    the rule, the file, the whitespace-normalised snippet and, for findings
-    without a snippet (manifest and behaviour checks), their extra fields.
-    """
-    extra = {k: v for k, v in finding.items()
-             if k not in _FP_SKIP and k not in _FINDING_BASE_KEYS}
-    snippet = _WS.sub(" ", finding.get("snippet") or "").strip()
-    key = "|".join([finding.get("id") or "", finding.get("file") or "",
-                    snippet, json.dumps(extra, sort_keys=True, default=str)])
-    return stable_id(key)
-
-
-_FINDING_BASE_KEYS = {
-    "id", "title", "severity", "owasp", "owasp_name", "legacy_owasp",
-    "category", "cwe", "masvs", "description", "remediation", "file",
-    "snippet", "match", "evidence_type",
-}

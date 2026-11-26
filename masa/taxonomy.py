@@ -127,9 +127,3 @@ TAXA: Dict[str, Tuple[Optional[str], Optional[str]]] = {
     "NAT-010": ("CWE-693", "MASVS-CODE-4"),
 }
 
-
-def cwe_tag(cwe: Optional[str]) -> Optional[str]:
-    """GitHub code scanning groups alerts by tags of this form."""
-    if not cwe:
-        return None
-    return "external/cwe/" + cwe.lower()

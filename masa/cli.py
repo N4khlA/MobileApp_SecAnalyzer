@@ -62,10 +62,9 @@ def _load_policy(args: argparse.Namespace):
     """Read the config file and baseline before the (slow) scan, so a typo
     fails fast."""
     config = None
-    if not getattr(args, "no_config", False):
-        path = getattr(args, "config", None) or policy.find_config()
-        if path:
-            config = policy.load_config(path)
+    path = getattr(args, "config", None) or policy.find_config()
+    if path:
+        config = policy.load_config(path)
     baseline = None
     if getattr(args, "baseline", None):
         baseline = policy.load_baseline(args.baseline)
@@ -193,8 +192,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     pa.add_argument("--config", metavar="PATH",
                     help="suppression config (default: .masa.toml or "
                          ".masa.json in the current directory)")
-    pa.add_argument("--no-config", action="store_true",
-                    help="ignore any config file")
     pa.set_defaults(func=cmd_analyze)
 
     pr = sub.add_parser("rules", help="list detection rules")

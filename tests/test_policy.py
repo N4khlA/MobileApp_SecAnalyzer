@@ -154,10 +154,10 @@ class TestConfig(unittest.TestCase):
 
     @unittest.skipIf(sys.version_info < (3, 11), "tomllib needs 3.11+")
     def test_toml_config(self):
-        path = self.write(".masa.toml", '[[ignore]]\npath = "assets/"\n'
+        path = self.write(".masa.toml", '[[ignore]]\npath = "assets/*"\n'
                                         'reason = "vendored"\n')
         self.assertEqual(policy.load_config(path)["ignore"][0]["path"],
-                         "assets/")
+                         "assets/*")
 
     def test_bad_entries_are_rejected(self):
         bad = [{"rule": "SEC-001"},                      # no reason
@@ -177,7 +177,7 @@ class TestConfig(unittest.TestCase):
               Finding(BY_ID["CRY-001"], file="res/values/strings.xml")]
         n = policy.apply_ignores(fs, [
             {"rule": "SEC-001", "path": "res/*", "reason": "a"},
-            {"path": "assets/", "reason": "b"}])
+            {"path": "assets/*", "reason": "b"}])
         self.assertEqual(n, 2)
         self.assertEqual([bool(f.suppression) for f in fs],
                          [True, True, False, False])
@@ -254,7 +254,7 @@ class TestCliPolicy(unittest.TestCase):
     def test_config_suppression_passes_gate(self):
         cfg = os.path.join(self.tmp, ".masa.json")
         with open(cfg, "w") as fh:
-            json.dump({"ignore": [{"path": "src/", "reason": "test keys"}]},
+            json.dump({"ignore": [{"path": "src/*", "reason": "test keys"}]},
                       fh)
         code, out, _e, report, sarif = self.analyze()
         self.assertEqual(code, 0, out)
@@ -265,10 +265,6 @@ class TestCliPolicy(unittest.TestCase):
         sup = [r for r in sarif["runs"][0]["results"] if "suppressions" in r]
         self.assertEqual(sup[0]["suppressions"][0],
                          {"kind": "external", "justification": "test keys"})
-
-        # --no-config turns it back off
-        code, *_rest = self.analyze("--no-config")
-        self.assertEqual(code, 1)
 
     def test_inline_suppression_passes_gate(self):
         self.write("src/Main.java", "class Main {\n  " + AWS +
@@ -291,6 +287,12 @@ class TestCliPolicy(unittest.TestCase):
             fh.write("[]")
         code, _o, err = run(["analyze", self.app, "--baseline", path])
         self.assertEqual(code, 2)
+        # a pre-1.3 report has no fingerprints
+        with open(path, "w") as fh:
+            json.dump({"findings": [{"id": "SEC-001"}]}, fh)
+        code, _o, err = run(["analyze", self.app, "--baseline", path])
+        self.assertEqual(code, 2)
+        self.assertIn("regenerate", err)
 
 
 if __name__ == "__main__":

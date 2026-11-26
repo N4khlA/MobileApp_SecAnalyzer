@@ -34,11 +34,6 @@ def file_kind(name: str) -> str:
     return _KINDS_BY_EXT.get(ext, "other")
 
 
-def binary_kind(name: str) -> str:
-    """Strings come either from a dex file or from a native (ELF/Mach-O) one."""
-    return "dex" if name.lower().endswith(".dex") else "native"
-
-
 _IGNORE = re.compile(
     r"masa-ignore(?::?\s*((?:[A-Z]+-\d+)(?:\s*,\s*[A-Z]+-\d+)*))?"
     r"(?:\s*(?:--|:)\s*(.*?))?\s*(?:\*/|-->)?\s*$")
@@ -125,7 +120,7 @@ class Scanner:
     def scan_strings(self, strings: List[str], filename: str, findings: List[Finding],
                      offset_base: int = 0) -> List[Finding]:
         """Scan a list of extracted strings; findings are binary evidence."""
-        kind = binary_kind(filename)
+        kind = "dex" if filename.lower().endswith(".dex") else "native"
         active = [cr for cr in self.compiled.values()
                   if cr.re and cr.applies_to(kind)]
         for i, s in enumerate(strings):
