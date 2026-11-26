@@ -6,8 +6,30 @@ semantic versioning.
 
 ## [Unreleased]
 
+Ships as 1.3.0 on PyPI under the name `masa-scan` (`masa` was taken). The
+command and the import name stay `masa`.
+
 ### Added
 
+- Suppressions: inline `masa-ignore` / `masa-ignore: ID[, ID] -- reason`
+  comments, on the finding's line or on a comment line just above it, and a
+  `.masa.toml` / `.masa.json` config with `[[ignore]]` entries (`rule`,
+  `path` glob, required `reason`). Suppressed findings move
+  to `suppressed` in JSON and carry SARIF `suppressions`; they no longer
+  fail the gate or count toward the grade. `--config PATH` picks the file.
+- Baseline mode: `--baseline old.report.json` keeps findings already in an
+  earlier report as `baselined` (SARIF `baselineState: unchanged`), and only
+  new ones fail the gate. Baselines must come from masa 1.3 or later.
+- Every finding has a `fingerprint` (rule, file, normalised snippet, extra
+  fields; no line number), so it survives code moving around.
+- CWE and OWASP MASVS v2 ids on every rule (`masa/taxonomy.py`), in JSON,
+  Markdown and HTML, in `masa rules`, and as SARIF tags
+  (`external/cwe/cwe-798`) for GitHub code scanning.
+- GitHub Action (`action.yml`): `uses: N4khlA/MobileApp_SecAnalyzer@v1.3.0`.
+  It uploads SARIF and then applies the gate, so alerts show even on a failed
+  build.
+- Release workflow publishing to PyPI through trusted publishing (no stored
+  token).
 - Android IPC rules (`ipc` category): intent redirection (IPC-001), mutable
   implicit PendingIntent (IPC-002), sticky broadcasts (IPC-003),
   `check/enforceCallingOrSelfPermission` (IPC-004), caller identity from
@@ -35,8 +57,23 @@ semantic versioning.
 - `tests/test_detection.py`: vulnerable/safe pairs for every new rule plus
   clean-app false-positive scans.
 
+### Changed
+
+- Pattern rules only run on the file kinds they apply to. API-call rules
+  (crypto, storage, logging, auth, input, IPC, supply chain) skip
+  configuration and documentation files; native rules (NAT-001..004) run on
+  native binaries and C/C++/Objective-C source only. Secrets and endpoints
+  are still reported in every file.
+- SARIF `partialFingerprints` moved from `masa/v1` (included the line) to
+  `masa/v2` (the line-free fingerprint). GitHub will re-open existing alerts
+  once after upgrading.
+
 ### Fixed
 
+- NAT-002 (weak crypto in native code) fired on Java source and dex strings,
+  duplicating the CRY rules, yet missed OpenSSL symbols such as `MD5_Init`
+  and `DES_key_schedule` because `\b` treats `_` as a word character. On
+  the demo APK: 6 misplaced hits gone, 2 real ones in `libvulnbank.so` found.
 - `android:exported="false"` in a plain-text manifest was read as the
   string `"false"`, which is truthy, so private components were reported as
   exported (CFG-001, high).

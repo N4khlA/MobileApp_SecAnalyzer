@@ -1,0 +1,73 @@
+name: masa mobile security scan
+description: Static OWASP Mobile Top 10 scan of an APK, IPA or app source tree, with SARIF for code scanning
+author: Guerfi Ahmed Yacine
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  target:
+    description: Path to the .apk, .ipa, .app bundle or Android project to scan
+    required: true
+  fail-on:
+    description: Fail the job on a finding at or above this severity (critical, high, medium, low, info, none)
+    default: high
+  sarif:
+    description: Where to write the SARIF report
+    default: masa.sarif
+  upload-sarif:
+    description: Upload the SARIF to GitHub code scanning (needs security-events write)
+    default: "true"
+  args:
+    description: Extra masa analyze flags, e.g. --baseline masa-baseline.json --strict
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+
+    # install masa from the action's own checkout, so the version always
+    # matches the ref in `uses:`
+    - name: install masa
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: python -m pip install --quiet "$ACTION_PATH"
+
+    # inputs go through env vars, never straight into the script, so a
+    # crafted input cannot inject shell commands
+    - name: scan
+      id: scan
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        SARIF: ${{ inputs.sarif }}
+        EXTRA: ${{ inputs.args }}
+      run: |
+        # EXTRA is word-split on purpose; set -f stops glob expansion
+        set -f +e
+        masa analyze "$TARGET" --sarif "$SARIF" --fail-on "$FAIL_ON" $EXTRA
+        code=$?
+        set -e
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        # exit 2 is a real error (bad input): stop before uploading
+        [ "$code" -eq 2 ] && exit 2
+        exit 0
+
+    - name: upload SARIF
+      if: ${{ inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif }}
+        category: masa
+
+    # fail after the upload, so the alerts show up even when the gate fails
+    - name: gate
+      shell: bash
+      env:
+        CODE: ${{ steps.scan.outputs.exit-code }}
+      run: exit "$CODE"

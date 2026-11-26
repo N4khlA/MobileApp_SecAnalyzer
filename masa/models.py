@@ -1,7 +1,8 @@
 """Core data models shared across the analyzer."""
 
 import hashlib
-from typing import Any, Dict, List, Optional
+import json
+from typing import Any, Dict, FrozenSet, List, Optional
 
 SEVERITY_WEIGHTS: Dict[str, int] = {
     "critical": 10,
@@ -96,6 +97,11 @@ class Rule:
         self.description = description
         self.remediation = remediation
         self.note = note
+        self.cwe: Optional[str] = None      # e.g. "CWE-798"
+        self.masvs: Optional[str] = None    # e.g. "MASVS-STORAGE-1"
+        # file kinds (see scanner.file_kind) a pattern rule runs on;
+        # None means every kind
+        self.targets: Optional[FrozenSet[str]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -106,6 +112,8 @@ class Rule:
             "owasp_name": OWASP_2023.get(self.owasp, ""),
             "legacy_owasp": self.legacy,
             "category": self.category,
+            "cwe": self.cwe,
+            "masvs": self.masvs,
             "description": self.description,
             "remediation": self.remediation,
         }
@@ -124,10 +132,21 @@ class Finding:
         self.match = match
         self.evidence_type = evidence_type   # code | manifest | binary | config | behavior
         self.extra = extra or {}
+        # set when an inline comment or the config file accepts the finding:
+        # {"kind": "inSource" | "external", "justification": str}
+        self.suppression: Optional[Dict[str, str]] = None
 
     @property
     def severity(self) -> str:
         return self.rule.severity
+
+    def fingerprint(self) -> str:
+        """Same finding across scans: rule, file, whitespace-normalised
+        snippet and extra fields, but not the line, which shifts on edits."""
+        extra = {k: v for k, v in self.extra.items() if k != "context"}
+        return stable_id("|".join([
+            self.rule.id, self.file or "", " ".join(self.snippet.split()),
+            json.dumps(extra, sort_keys=True, default=str)]))
 
     @property
     def owasp(self) -> str:
@@ -143,6 +162,9 @@ class Finding:
             "evidence_type": self.evidence_type,
         })
         d.update(self.extra)
+        d["fingerprint"] = self.fingerprint()
+        if self.suppression:
+            d["suppression"] = dict(self.suppression)
         return d
 
 
@@ -171,4 +193,5 @@ def mask_secret(value: Optional[str], keep: int = 5) -> str:
 
 def stable_id(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:12]
+
 

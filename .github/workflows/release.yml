@@ -1,0 +1,59 @@
+name: release
+
+# Push a tag like v1.3.0 to build, test and publish masa-scan to PyPI.
+# Publishing uses PyPI trusted publishing (OIDC): no API token is stored in
+# the repo. One-time setup on pypi.org: add a "pending publisher" for project
+# masa-scan, owner N4khlA, repo MobileApp_SecAnalyzer, workflow release.yml,
+# environment pypi.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: check tag matches version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(python -c "import masa; print(masa.__version__)")
+          test "v$version" = "$TAG" || { echo "tag $TAG != masa $version"; exit 1; }
+      - name: test
+        run: |
+          python -m pip install -e ".[dev]"
+          ruff check .
+          pytest -q
+      - name: build
+        run: |
+          python -m pip install build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    environment: pypi
+    permissions:
+      id-token: write   # trusted publishing only; nothing else
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

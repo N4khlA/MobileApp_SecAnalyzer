@@ -24,10 +24,18 @@ It automatically evaluates application binaries and source code against the **OW
 - **Optional Decompiler Integration**: When an APK has no sources, masa tries `jadx`, then `dex2jar` + CFR, then `apktool` (smali), using whichever is on `PATH`. CFR is found as a `cfr` wrapper or via `MASA_CFR_JAR=/path/to/cfr.jar`.
 - **Multi-Format Reporting**: Generates interactive HTML dashboards, Markdown summaries, structured JSON reports and SARIF 2.1.0 for code scanning.
 - **CI Gate**: `--fail-on` turns findings into a non-zero exit code, so a pipeline can block on critical or high severity issues.
+- **Adoptable in CI**: inline `masa-ignore` comments and a `.masa.toml` for accepted findings, plus `--baseline` so only new findings fail the build. Ships as a GitHub Action.
+- **CWE + MASVS v2 ids** on every rule, in every report format and as SARIF tags.
+- **File-type scoping**: API-call rules skip config and docs, and native rules only look at native code, which cuts duplicate and misplaced findings.
 
 ---
 
 ## Installation
+
+### From PyPI
+```bash
+pip install masa-scan    # installs the `masa` command
+```
 
 ### From Source
 ```bash
@@ -97,6 +105,73 @@ masa analyze app.apk -o reports/ --sarif reports/masa.sarif --fail-on high --str
     sarif_file: masa.sarif
 ```
 
+### GitHub Action
+
+```yaml
+permissions:
+  contents: read
+  security-events: write   # for the SARIF upload
+steps:
+  - uses: actions/checkout@v4
+  - run: ./gradlew assembleRelease
+  - uses: N4khlA/MobileApp_SecAnalyzer@v1.3.0
+    with:
+      target: app/build/outputs/apk/release/app-release.apk
+      fail-on: high
+      # args: --baseline masa-baseline.json   # only new findings fail
+```
+
+Inputs: `target` (required), `fail-on` (default `high`), `sarif` (default
+`masa.sarif`), `upload-sarif` (default `true`) and `args` for any other
+`masa analyze` flags, such as `--baseline masa-baseline.json --strict`. SARIF is uploaded before the gate is
+applied, so the alerts are visible even when the job fails.
+
+### Suppressing findings
+
+Accept a finding in code, on its line or on a comment line directly above:
+
+```java
+String key = "AKIAIOSFODNN7EXAMPLE"; // masa-ignore: SEC-001 -- AWS docs example key
+// masa-ignore: CRY-002 -- MD5 is only a cache key here
+String k = md5(url);
+```
+
+`masa-ignore` with no ids silences every rule on that line. For findings
+without a line (manifest, binary and behaviour checks) or for whole folders,
+use `.masa.toml` (Python 3.11+) or `.masa.json` in the directory you run
+masa from, or pass `--config PATH`:
+
+```toml
+[[ignore]]
+rule = "SEC-002"
+path = "res/values/*.xml"
+reason = "Maps key restricted to our package + signing cert"
+
+[[ignore]]
+path = "assets/vendor/*"
+reason = "third-party SDK, tracked upstream"
+```
+
+Each entry needs a `reason`, plus a `rule`, a `path` or both. Suppressed
+findings are listed under `suppressed` in the JSON report and carry SARIF
+`suppressions`. They do not fail the gate or lower the grade.
+
+### Baselines
+
+To adopt masa on an existing app without fixing everything first, save a
+report once and gate only on what is new:
+
+```bash
+masa analyze app.apk -o reports/                  # writes reports/app.report.json
+cp reports/app.report.json masa-baseline.json     # commit this
+masa analyze app.apk --baseline masa-baseline.json --fail-on high
+```
+
+Findings are matched by a fingerprint (rule, file, snippet) that ignores
+line numbers, so moving code around does not create "new" findings. Known
+findings stay in the report as `baselined` and still count toward the OWASP
+grade, which describes the app rather than the diff.
+
 | Exit code | Meaning |
 |---|---|
 | `0` | Scan finished and passed the gate |
@@ -165,6 +240,8 @@ masa/
 ├── native.py         # ELF (.so) and Mach-O binary security inspection
 ├── scanner.py        # High-performance regex text/string scanner
 ├── rules.py          # Detection rule definitions (OWASP 2023 & 2016)
+├── taxonomy.py       # CWE and MASVS v2 ids per rule
+├── policy.py         # Config-file suppressions and baseline matching
 ├── models.py         # Core data models (Rule, Finding, PositiveCheck)
 ├── report.py         # Compliance scoring and JSON/MD/HTML/SARIF generators
 ├── archive.py        # Zip/tree readers with size limits

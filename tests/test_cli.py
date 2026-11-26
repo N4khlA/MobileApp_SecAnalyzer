@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
-from masa import archive  # noqa: E402
+from masa import __version__, archive  # noqa: E402
 from masa.apk import analyze_apk  # noqa: E402
 from masa.cli import detect_platform, main  # noqa: E402
 from masa.report import build_report, build_sarif, write_sarif  # noqa: E402
@@ -92,7 +92,7 @@ class TestSarif(unittest.TestCase):
         for result in run["results"]:
             self.assertIn(result["ruleId"], ids)
             self.assertIn(result["level"], ("error", "warning", "note"))
-            self.assertIn("masa/v1", result["partialFingerprints"])
+            self.assertIn("masa/v2", result["partialFingerprints"])
         net = [r for r in run["results"] if r["ruleId"] == "NET-004"][0]
         self.assertEqual(net["level"], "error")
         self.assertIn("locations", net)
@@ -133,7 +133,7 @@ class TestCliGate(unittest.TestCase):
         with self.assertRaises(SystemExit) as err, redirect_stdout(out):
             main(["--version"])
         self.assertEqual(err.exception.code, 0)
-        self.assertIn("masa 1.2.0", out.getvalue())
+        self.assertIn("masa " + __version__, out.getvalue())
 
 
 if __name__ == "__main__":

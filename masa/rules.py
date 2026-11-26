@@ -743,7 +743,9 @@ NATIVE = [
          "types."),
     Rule("NAT-002", "Weak Cryptographic Primitive in Native Code", "high",
          "M10", "native",
-         r"(?i)\b(?:MD5|DES|RC4|SHA-?1|3DES)\b",
+         # letters/digits only as boundaries, so OpenSSL-style symbols
+         # (MD5_Init, DES_key_schedule, RC4_set_key) match too
+         r"(?i)(?<![A-Za-z0-9])(?:MD5|DES|RC4|SHA-?1|3DES)(?![A-Za-z0-9])",
          "A weak cryptographic primitive is present in native code.",
          "Replace with SHA-256/AES-256-GCM/ChaCha20 implementations."),
     Rule("NAT-003", "Command Execution in Native Code", "medium", "M7",
@@ -788,12 +790,41 @@ NATIVE = [
          "Compile Objective-C with -fobjc-arc."),
 ]
 
-from typing import List, Optional, Tuple
+from typing import Dict, FrozenSet, List, Optional, Tuple
+
+from .taxonomy import TAXA
 
 ALL_RULES: Tuple[Rule, ...] = tuple(SECRETS + CRYPTO + STORAGE + NETWORK + LOGGING + AUTH + INPUT +
                                   PRIVACY + CONFIG + BINARY + IPC + SUPPLYCHAIN + NATIVE)
 
 BY_ID = {r.id: r for r in ALL_RULES}
+
+# ---------------------------------------------------------------- scoping
+# Which file kinds (scanner.file_kind) each pattern rule runs on. Rules that
+# look for API calls only make sense in code: in compiled dex/Mach-O/ELF
+# strings, in source, or in text files without a known extension. Secrets
+# and endpoints are reported wherever they ship, documentation included.
+
+CODE_KINDS: FrozenSet[str] = frozenset(
+    {"source", "native_source", "dex", "native", "other"})
+NATIVE_KINDS: FrozenSet[str] = frozenset({"native_source", "native", "other"})
+
+_TARGETS_BY_CATEGORY: Dict[str, FrozenSet[str]] = {
+    "crypto": CODE_KINDS,
+    "storage": CODE_KINDS,
+    "logging": CODE_KINDS,
+    "auth": CODE_KINDS,
+    "input": CODE_KINDS,
+    "ipc": CODE_KINDS,
+    "supplychain": CODE_KINDS,
+    "privacy": CODE_KINDS | {"config"},
+    "native": NATIVE_KINDS,
+}
+
+for _r in ALL_RULES:
+    _r.cwe, _r.masvs = TAXA.get(_r.id, (None, None))
+    if _r.pattern:
+        _r.targets = _TARGETS_BY_CATEGORY.get(_r.category)
 
 
 def get_rule(rule_id: str) -> Optional[Rule]:

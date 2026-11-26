@@ -16,14 +16,13 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
-from . import __version__
+from . import __version__, policy
 from . import coverage as _coverage
 from .models import (
     OWASP_2016,
     OWASP_2023,
     SEVERITY_ORDER,
     SEVERITY_WEIGHTS,
-    stable_id,
 )
 
 TOOL_NAME = "Mobile App Security Analyzer (masa)"
@@ -209,15 +208,26 @@ def coverage_lines(data: Dict[str, Any], limit: int = 5) -> List[str]:
     return lines
 
 
-def build_report(result: Any, meta: Optional[Dict[str, Any]] = None, rules_ref: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-    """Serialize an AnalysisResult into the full report dictionary."""
+def build_report(result: Any, meta: Optional[Dict[str, Any]] = None,
+                 rules_ref: Optional[List[Dict[str, Any]]] = None,
+                 baseline: Optional[Any] = None,
+                 baseline_path: Optional[str] = None) -> Dict[str, Any]:
+    """Serialize an AnalysisResult into the full report dictionary.
+
+    ``findings`` holds the active findings: not suppressed and, when a
+    baseline is given, not already in it. Those drive the counts, the risk
+    score and the CI gate. Known (``baselined``) findings still count toward
+    the OWASP compliance grade, which describes the app, not the diff;
+    suppressed findings count toward nothing.
+    """
     meta = meta or {}
-    findings = [f.to_dict() for f in result.findings]
-    findings.sort(key=lambda f: (SEVERITY_ORDER.index(f["severity"]),
-                                 f["id"], f["file"] or ""))
+    every = [f.to_dict() for f in result.findings]
+    every.sort(key=lambda f: (SEVERITY_ORDER.index(f["severity"]),
+                              f["id"], f["file"] or "", f.get("line") or 0))
+    findings, known, suppressed = policy.split(every, baseline)
     positives = [p.to_dict() for p in result.positives]
     categories, overall = score({
-        "findings": findings,
+        "findings": findings + known,
         "positives": {p["key"]: p for p in positives},
     })
     grade, grade_desc = grade_for(overall)
@@ -264,6 +274,11 @@ def build_report(result: Any, meta: Optional[Dict[str, Any]] = None, rules_ref: 
         "categories": categories,
         "by_category": by_category,
         "findings": findings,
+        "baselined": known,
+        "suppressed": suppressed,
+        "baseline": ({"path": baseline_path, "known": len(known),
+                      "new": len(findings)}
+                     if baseline is not None else None),
         "positives": positives,
         "notes": result.notes,
         "coverage": _coverage_of(result),
@@ -280,6 +295,25 @@ def _fmt_sev_count(data):
                      for s in SEVERITY_ORDER)
 
 
+def policy_lines(data: Dict[str, Any]) -> List[str]:
+    """Baseline and suppression summary shared by the console and Markdown."""
+    lines = []
+    base = data.get("baseline")
+    if base:
+        lines.append("Baseline: %d new finding(s), %d already known (%s)" %
+                     (base["new"], base["known"], base.get("path") or "-"))
+    sup = data.get("suppressed") or []
+    if sup:
+        inline = sum(1 for f in sup if f["suppression"]["kind"] == "inSource")
+        lines.append("Suppressed: %d finding(s) (%d inline, %d by config)" %
+                     (len(sup), inline, len(sup) - inline))
+    return lines
+
+
+def _standards(f: Dict[str, Any]) -> str:
+    return ", ".join(x for x in (f.get("cwe"), f.get("masvs")) if x)
+
+
 def console_summary(data):
     lines = []
     t = data["target"]
@@ -294,6 +328,7 @@ def console_summary(data):
                  % (data["risk_score"], data["overall_compliance"],
                     data["grade"]))
     lines.extend(coverage_lines(data))
+    lines.extend(policy_lines(data))
     lines.append("-" * 70)
     for cat in data["categories"]:
         bar = "#" * (cat["compliance"] // 10) + "." * (10 - cat["compliance"] // 10)
@@ -343,10 +378,14 @@ def build_sarif(data):
     """Build a SARIF 2.1.0 document for GitHub code scanning."""
     cov = data.get("coverage") or _coverage.empty()
     refs = {r["id"]: r for r in data.get("rules_reference", [])}
+    baseline_on = data.get("baseline") is not None
+    tagged = ([(f, "new") for f in data["findings"]] +
+              [(f, "unchanged") for f in data.get("baselined") or []] +
+              [(f, None) for f in data.get("suppressed") or []])
     rule_ids = []
     rule_index = {}
     severities = {}
-    for finding in data["findings"]:
+    for finding, _state in tagged:
         rid = finding["id"]
         if rid not in rule_index:
             rule_index[rid] = len(rule_ids)
@@ -357,6 +396,11 @@ def build_sarif(data):
     for rid in rule_ids:
         meta = refs.get(rid, {})
         severity = meta.get("severity") or severities[rid]
+        tags = ["security", meta.get("owasp", "")]
+        if meta.get("cwe"):
+            tags.append("external/cwe/" + meta["cwe"].lower())
+        if meta.get("masvs"):
+            tags.append(meta["masvs"])
         rules.append({
             "id": rid,
             "name": rid,
@@ -368,12 +412,12 @@ def build_sarif(data):
             },
             "properties": {
                 "security-severity": SECURITY_SEVERITY.get(severity, "0.0"),
-                "tags": ["security", meta.get("owasp", "")],
+                "tags": tags,
             },
         })
 
     results = []
-    for finding in data["findings"]:
+    for finding, state in tagged:
         rid = finding["id"]
         path = finding.get("file") or ""
         line = finding.get("line")
@@ -384,16 +428,21 @@ def build_sarif(data):
             "message": {
                 "text": "%s [%s]" % (finding["title"], finding["owasp"])
             },
-            "partialFingerprints": {
-                "masa/v1": stable_id("%s|%s|%s|%s" % (
-                    rid, path, line or 0, finding.get("match") or ""))
-            },
+            # v2 leaves the line number out, so alerts survive edits above
+            "partialFingerprints": {"masa/v2": finding["fingerprint"]},
             "properties": {
                 "severity": finding["severity"],
                 "owasp": finding["owasp"],
                 "evidenceType": finding.get("evidence_type", ""),
             },
         }
+        if finding.get("suppression"):
+            result["suppressions"] = [{
+                "kind": finding["suppression"]["kind"],
+                "justification": finding["suppression"]["justification"],
+            }]
+        elif baseline_on:
+            result["baselineState"] = state
         if path:
             location = {
                 "artifactLocation": {
@@ -488,9 +537,11 @@ def _md(data):
            "| Grade | %s - %s |" % (data["grade"], data["grade_description"]),
            "| Risk score | %d |" % data["risk_score"],
            "| Findings | %s |" % _fmt_sev_count(data),
-           "",
-           "### Top Findings",
            ""]
+    pl = policy_lines(data)
+    if pl:
+        out += ["> " + line + "  " for line in pl] + [""]
+    out += ["### Top Findings", ""]
     for f in data["top_findings"]:
         loc = "%s:%s" % (f.get("file") or "?", f.get("line")) \
             if f.get("line") is not None else (f.get("file") or "?")
@@ -521,6 +572,8 @@ def _md(data):
             out.append("- **Location:** %s  " % loc)
             out.append("- **OWASP:** %s (2023), %s (2016)" %
                        (f["owasp"], f.get("legacy_owasp") or "-"))
+            if _standards(f):
+                out.append("- **Standards:** %s  " % _standards(f))
             if f.get("match"):
                 out.append("- **Evidence:** `%s`  " % f["match"])
             out.append("- **Description:** %s  " % f["description"])
@@ -648,7 +701,7 @@ def _html(data):
           <div class="finding">
             <h4 style="color:%s">%s <span class="badge">%s</span> <code>%s</code></h4>
             <p class="loc"><b>Location:</b> %s &nbsp; <b>OWASP:</b> %s (2023)
-            / %s (2016) &nbsp; <b>Type:</b> %s</p>
+            / %s (2016) &nbsp; <b>Type:</b> %s%s</p>
             <p>%s</p>
             <p>%s</p>
             %s
@@ -656,7 +709,9 @@ def _html(data):
           </div>""" % (SEVERITY_COLORS[f["severity"]], _esc(f["title"]),
                        f["severity"].upper(), _esc(f["id"]), _esc(loc),
                        f["owasp"], f.get("legacy_owasp") or "-",
-                       f.get("evidence_type", ""), match,
+                       f.get("evidence_type", ""),
+                       (" &nbsp; <b>Standards:</b> %s" % _esc(_standards(f)))
+                       if _standards(f) else "", match,
                        _esc(f["description"]), context, _esc(f["remediation"])))
         finding_blocks.append("""
       <section>
