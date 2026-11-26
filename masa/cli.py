@@ -7,7 +7,7 @@ import sys
 import zipfile
 from typing import Any, Dict, Optional, Sequence
 
-from . import __version__
+from . import __version__, policy
 from .apk import analyze_apk
 from .ipa import analyze_ipa
 from .models import SEVERITY_ORDER
@@ -58,7 +58,22 @@ def detect_platform(path: str) -> str:
                      "an Android project dir or an iOS .app bundle)" % path)
 
 
+def _load_policy(args: argparse.Namespace):
+    """Read the config file and baseline before the (slow) scan, so a typo
+    fails fast."""
+    config = None
+    if not getattr(args, "no_config", False):
+        path = getattr(args, "config", None) or policy.find_config()
+        if path:
+            config = policy.load_config(path)
+    baseline = None
+    if getattr(args, "baseline", None):
+        baseline = policy.load_baseline(args.baseline)
+    return config, baseline
+
+
 def cmd_analyze(args: argparse.Namespace) -> Dict[str, Any]:
+    config, baseline = _load_policy(args)
     platform = detect_platform(args.input)
     if platform == "android":
         result = analyze_apk(args.input, use_decompiler=not args.no_decompile)
@@ -69,8 +84,13 @@ def cmd_analyze(args: argparse.Namespace) -> Dict[str, Any]:
         meta["sha256"] = _sha256(args.input)
     except OSError:
         meta["sha256"] = None
+    if config:
+        policy.apply_ignores(result.findings, config["ignore"])
+        result.notes.append("config: %s (%d ignore rule(s))" %
+                            (config["path"], len(config["ignore"])))
     rules_ref = [r.to_dict() for r in ALL_RULES]
-    report = build_report(result, meta, rules_ref)
+    report = build_report(result, meta, rules_ref, baseline=baseline,
+                          baseline_path=getattr(args, "baseline", None))
     print(console_summary(report))
     if args.outdir:
         os.makedirs(args.outdir, exist_ok=True)
@@ -114,7 +134,8 @@ def cmd_rules(args: argparse.Namespace) -> int:
     if args.category:
         rules = rules_for_category(args.category)
     for r in rules:
-        print("%-10s %-8s %-5s %s" % (r.id, r.severity, r.owasp, r.title))
+        print("%-9s %-8s %-4s %-9s %-19s %s" % (
+            r.id, r.severity, r.owasp, r.cwe or "-", r.masvs or "-", r.title))
     print("\n%d rules (category filter: %s)" % (len(rules),
                                                 args.category or "all"))
     print("OWASP Mobile Top 10 2023 categories: M1-M10")
@@ -166,6 +187,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                          "(critical, high, medium, low, info; default: none)")
     pa.add_argument("--strict", action="store_true",
                     help="exit 1 when any input file could not be analysed")
+    pa.add_argument("--baseline", metavar="REPORT",
+                    help="earlier masa JSON report: findings already in it "
+                         "are kept as known and do not fail the gate")
+    pa.add_argument("--config", metavar="PATH",
+                    help="suppression config (default: .masa.toml or "
+                         ".masa.json in the current directory)")
+    pa.add_argument("--no-config", action="store_true",
+                    help="ignore any config file")
     pa.set_defaults(func=cmd_analyze)
 
     pr = sub.add_parser("rules", help="list detection rules")

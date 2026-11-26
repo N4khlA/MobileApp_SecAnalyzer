@@ -1,7 +1,9 @@
 """Core data models shared across the analyzer."""
 
 import hashlib
-from typing import Any, Dict, List, Optional
+import json
+import re
+from typing import Any, Dict, FrozenSet, List, Optional
 
 SEVERITY_WEIGHTS: Dict[str, int] = {
     "critical": 10,
@@ -96,6 +98,11 @@ class Rule:
         self.description = description
         self.remediation = remediation
         self.note = note
+        self.cwe: Optional[str] = None      # e.g. "CWE-798"
+        self.masvs: Optional[str] = None    # e.g. "MASVS-STORAGE-1"
+        # file kinds (see scanner.file_kind) a pattern rule runs on;
+        # None means every kind
+        self.targets: Optional[FrozenSet[str]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -106,6 +113,8 @@ class Rule:
             "owasp_name": OWASP_2023.get(self.owasp, ""),
             "legacy_owasp": self.legacy,
             "category": self.category,
+            "cwe": self.cwe,
+            "masvs": self.masvs,
             "description": self.description,
             "remediation": self.remediation,
         }
@@ -124,6 +133,9 @@ class Finding:
         self.match = match
         self.evidence_type = evidence_type   # code | manifest | binary | config | behavior
         self.extra = extra or {}
+        # set when an inline comment or the config file accepts the finding:
+        # {"kind": "inSource" | "external", "justification": str}
+        self.suppression: Optional[Dict[str, str]] = None
 
     @property
     def severity(self) -> str:
@@ -143,6 +155,9 @@ class Finding:
             "evidence_type": self.evidence_type,
         })
         d.update(self.extra)
+        d["fingerprint"] = fingerprint(d)
+        if self.suppression:
+            d["suppression"] = dict(self.suppression)
         return d
 
 
@@ -172,3 +187,29 @@ def mask_secret(value: Optional[str], keep: int = 5) -> str:
 def stable_id(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:12]
 
+
+
+_WS = re.compile(r"\s+")
+_FP_SKIP = {"line", "context", "fingerprint", "suppression"}
+
+
+def fingerprint(finding: Dict[str, Any]) -> str:
+    """Identify a finding across scans without using its line number.
+
+    Lines shift whenever code above them changes, so the fingerprint uses
+    the rule, the file, the whitespace-normalised snippet and, for findings
+    without a snippet (manifest and behaviour checks), their extra fields.
+    """
+    extra = {k: v for k, v in finding.items()
+             if k not in _FP_SKIP and k not in _FINDING_BASE_KEYS}
+    snippet = _WS.sub(" ", finding.get("snippet") or "").strip()
+    key = "|".join([finding.get("id") or "", finding.get("file") or "",
+                    snippet, json.dumps(extra, sort_keys=True, default=str)])
+    return stable_id(key)
+
+
+_FINDING_BASE_KEYS = {
+    "id", "title", "severity", "owasp", "owasp_name", "legacy_owasp",
+    "category", "cwe", "masvs", "description", "remediation", "file",
+    "snippet", "match", "evidence_type",
+}
