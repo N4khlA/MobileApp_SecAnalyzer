@@ -1,12 +1,13 @@
 # masa roadmap
 
-Where masa is today (v1.2.0): 100 regex rules plus programmatic manifest, plist
-and binary checks. It is zero-dependency, reports in SARIF, JSON, Markdown and
-HTML, has a coverage-honest "incomplete scan" signal and passes 105 tests.
+Where masa is today (v1.3.0, on PyPI as `masa-scan`): 100 regex rules plus
+programmatic manifest, plist and binary checks, each tagged with CWE and MASVS
+ids. It is zero-dependency, reports in SARIF, JSON, Markdown and HTML, has a
+coverage-honest "incomplete scan" signal, supports suppressions and baselines,
+ships as a GitHub Action and passes 130 tests.
 
-What holds it back: rules are hardcoded in Python, every rule runs against every
-file, nobody has measured precision or recall on real apps, there is no way to
-suppress a finding, and apps built with Flutter, React Native or Xamarin go
+What holds it back: rules are hardcoded in Python, nobody has measured precision
+or recall on real apps, and apps built with Flutter, React Native or Xamarin go
 almost unanalysed.
 
 The direction is to become **the lightweight, CI-native MobSF alternative**: one
@@ -15,7 +16,7 @@ measured on real apps behind every rule.
 
 ---
 
-## v1.3: usable in a real pipeline (done, not yet released)
+## v1.3: usable in a real pipeline (released 2026-11-26)
 
 The goal of v1.3 is that a team can adopt masa without it nagging them forever.
 
@@ -32,9 +33,9 @@ The goal of v1.3 is that a team can adopt masa without it nagging them forever.
 - [x] **Per-rule file scoping**: add `Rule.applies_to` (for example
       `{"java","kt","smali"}`) so crypto rules stop matching `.md` and `.json`.
       This is the cheapest false-positive win and it also speeds up scanning.
-- [x] **PyPI release + GitHub Action**: `uses: N4khlA/masa-action@v1`. Check the
-      PyPI name first, because `masa` is probably taken; `masa-scan` is a
-      fallback.
+- [x] **PyPI release + GitHub Action**: `pip install masa-scan` (`masa` was
+      taken) and `uses: N4khlA/MobileApp_SecAnalyzer@v1.3.0`, from this repo's
+      `action.yml`. Releases publish through PyPI trusted publishing on a tag.
 
 ## v1.4: prove it works (≈3 weeks). This is the research hook.
 

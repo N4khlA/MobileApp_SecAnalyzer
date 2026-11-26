@@ -6,8 +6,10 @@ semantic versioning.
 
 ## [Unreleased]
 
-Ships as 1.3.0 on PyPI under the name `masa-scan` (`masa` was taken). The
-command and the import name stay `masa`.
+## [1.3.0] - 2026-11-26
+
+On PyPI under the name `masa-scan` (`masa` was taken). The command and the
+import name stay `masa`.
 
 ### Added
 
