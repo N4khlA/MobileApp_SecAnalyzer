@@ -6,6 +6,35 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `bench/`: a benchmark on real apps. `python bench/run.py` downloads a
+  pinned corpus (InsecureBankv2, OWASP UnCrackable, 7 F-Droid apps), scans
+  it and scores recall and precision against `bench/truth/`, writing
+  `bench/BENCHMARK.md`; `--check` fails when a rule scores worse.
+
+### Fixed
+
+Found by the first benchmark run; none showed up on masa's own fixtures,
+because the fixture builders shared each bug.
+
+- Binary `AndroidManifest.xml` from real APKs was never read: string pool
+  offsets were taken from the chunk start instead of `stringsStart`, and the
+  AXML builder wrote them the same wrong way. Every real APK came out with
+  no package, components or permissions, so all manifest checks (exported
+  components, debuggable, backup, target SDK, permissions) were silent, while
+  the scan still reported complete coverage. On InsecureBankv2, recall of
+  the expected weaknesses went from 29% to 57%.
+- The manifest `package` was looked up in the `android:` namespace and was
+  always empty on real APKs.
+- Any real IPA crashed masa: the provisioning-profile parser caught
+  `plistlib.InvalidPlistException`, which does not exist. Real profiles are
+  CMS-signed, so they always hit that path. The embedded plist is now
+  parsed, which also makes the `get-task-allow` check (CFG-004) work on real
+  IPAs.
+- `META-INF/*.SF` and `*.MF` signature files were scanned as code, so their
+  `SHA1-Digest` lines fired NAT-002 about 1,900 times across 12 apps.
+
 ## [1.3.0] - 2026-11-26
 
 On PyPI under the name `masa-scan` (`masa` was taken). The command and the

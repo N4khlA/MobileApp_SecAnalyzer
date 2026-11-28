@@ -531,8 +531,10 @@ def build_ipa(outdir):
     with zipfile.ZipFile(ipa_path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("Payload/VulnBank.app/Info.plist", info_plist)
         zf.writestr("Payload/VulnBank.app/VulnBank", macho)
+        # real profiles are CMS-signed: the plist sits inside DER bytes
         zf.writestr("Payload/VulnBank.app/embedded.mobileprovision",
-                    PROVISIONING_XML.encode("utf-8"))
+                    b"\x30\x82\x1f\x3a\x06\x09*\x86H\x86\xf7\r\x01\x07\x02" +
+                    PROVISIONING_XML.encode("utf-8") + b"\xa0\x82\x0c\x00")
     return ipa_path
 
 

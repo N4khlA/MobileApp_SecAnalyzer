@@ -68,7 +68,7 @@ def _find_app_dir(files):
 def _parse_plist(data):
     try:
         return plistlib.loads(data)
-    except (plistlib.InvalidPlistException, ValueError, KeyError, OSError, TypeError):
+    except (ValueError, KeyError, OSError, TypeError):
         try:
             return bplist.loads(bytes(data))
         except (ValueError, KeyError, OSError, TypeError, struct.error):
@@ -156,7 +156,10 @@ def analyze_ipa(input_path, out_dir=None):
             low = name.lower()
             if low.endswith(".mobileprovision"):
                 txt = scanner.decode_text(data)
-                mobileprov = _parse_plist(data) or {}
+                # the plist is embedded in a CMS signature: parse just it
+                start, end = data.find(b"<?xml"), data.find(b"</plist>")
+                mobileprov = _parse_plist(
+                    data[start:end + 8] if 0 <= start < end else data) or {}
                 _provision_checks(result, findings, mobileprov, txt, name)
             elif low.endswith(".plist") and name != plist_path:
                 p = _parse_plist(data)

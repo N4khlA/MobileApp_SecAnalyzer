@@ -73,7 +73,8 @@ class TestFileScoping(unittest.TestCase):
         cases = {"a/B.java": "source", "x.smali": "source",
                  "lib.c": "native_source", "res/values/strings.xml": "config",
                  "AndroidManifest.xml (normalized)": "config",
-                 "README.md": "doc", "LICENSE": "other"}
+                 "README.md": "doc", "LICENSE": "other",
+                 "META-INF/CERT.SF": "config", "META-INF/MANIFEST.MF": "config"}
         for name, kind in cases.items():
             with self.subTest(name):
                 self.assertEqual(file_kind(name), kind)

@@ -149,13 +149,16 @@ def _dec_utf8(data, pos):
 
 
 def _read_string_pool(data, off, chunk_size):
+    hsize = struct.unpack_from("<H", data, off + 2)[0]
     (count, style_count, flags, strings_start, _styles) = struct.unpack_from(
         "<IIIII", data, off + 8)
     is_utf8 = bool(flags & UTF8_FLAG)
     strings = []
     for i in range(count):
-        so = struct.unpack_from("<I", data, off + 28 + i * 4)[0]
-        s, _ = (_dec_utf8 if is_utf8 else _dec_utf16)(data, off + so)
+        # offsets are relative to stringsStart, not to the chunk
+        so = struct.unpack_from("<I", data, off + hsize + i * 4)[0]
+        s, _ = (_dec_utf8 if is_utf8 else _dec_utf16)(
+            data, off + strings_start + so)
         strings.append(s)
     return strings
 
@@ -299,7 +302,7 @@ class Builder:
         header = struct.pack("<HHIIIII", 0x0001, 0x001C, csize,
                              len(self.strings), 0, UTF8_FLAG, strings_start)
         h = header + struct.pack("<I", 0)  # styles start
-        out = h + b"".join(struct.pack("<I", strings_start + o)
+        out = h + b"".join(struct.pack("<I", o)
                            for o in offsets) + bytes(data)
         return out
 

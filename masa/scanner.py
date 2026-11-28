@@ -19,7 +19,8 @@ for _kind, _exts in {
                "dart", "py", "rb", "php", "sh"),
     "native_source": ("c", "cc", "cpp", "cxx", "h", "hpp", "m", "mm"),
     "config": ("json", "xml", "yml", "yaml", "properties", "gradle", "plist",
-               "config", "cfg", "ini", "toml", "proto", "xcconfig"),
+               "config", "cfg", "ini", "toml", "proto", "xcconfig",
+               "mf", "sf"),  # META-INF signature manifests: digests only
     "doc": ("md", "txt", "html", "htm", "css"),
 }.items():
     for _ext in _exts:

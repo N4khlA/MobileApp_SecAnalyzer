@@ -330,7 +330,7 @@ def _manifest_from_axml(root):
     m = root.find("manifest")
     if m is None:
         m = root
-    info.package = m.get("package", None)
+    info.package = m.get("package", ns=None)   # no android: prefix
     info.version_code = m.get("versionCode", None)
     info.version_name = m.get("versionName", None)
     sdk = m.find("uses-sdk")

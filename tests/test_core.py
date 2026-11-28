@@ -27,6 +27,21 @@ from masa.samples import (build_apk, build_ipa, make_dex,  # noqa: E402
 
 
 class TestAxml(unittest.TestCase):
+    def test_aapt_style_utf16_string_pool(self):
+        # as aapt writes it: UTF-16, offsets relative to stringsStart
+        import struct
+        strs = [s.encode("utf-16-le") for s in ("manifest", "package")]
+        blobs = [struct.pack("<H", len(s) // 2) + s + b"\x00\x00"
+                 for s in strs]
+        offsets = [0, len(blobs[0])]
+        strings_start = 28 + 4 * len(strs)
+        body = b"".join(blobs)
+        chunk = struct.pack("<HHIIIIII", 0x0001, 28, strings_start + len(body),
+                            len(strs), 0, 0, strings_start, 0)
+        chunk += b"".join(struct.pack("<I", o) for o in offsets) + body
+        self.assertEqual(axml._read_string_pool(chunk, 0, len(chunk)),
+                         ["manifest", "package"])
+
     def test_roundtrip(self):
         from masa.samples import build_android_manifest
         data = build_android_manifest()
