@@ -51,9 +51,9 @@ The goal of v1.4 is a precision/recall table that no one can argue with.
 - [~] **Clean corpus**: 50 to 100 popular open-source apps from F-Droid. Use it to
       measure the false-positive rate per rule. *7 apps so far, every
       finding labelled (`bench/LABELLING.md`).*
-- [~] Add a `bench/run.py` script that writes per-rule TP/FP/FN, then a
+- [x] Add a `bench/run.py` script that writes per-rule TP/FP/FN, then a
       `BENCHMARK.md` table and a CI job that fails when precision regresses.
-      *Script, table and `--check` done; the CI job is not wired up yet.*
+      *Done: `.github/workflows/bench.yml` runs `--check` on every change.*
 - [ ] **Head-to-head comparison** with MobSF and semgrep's mobile rules on the same
       corpus, covering precision, recall, scan time and install size. This is
       the README headline and a paper section.

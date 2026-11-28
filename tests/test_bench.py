@@ -67,6 +67,27 @@ class TestBench(unittest.TestCase):
         # a rule that stops firing loses its recall and its precision
         self.assertEqual(len(run.regressions(old, {})), 2)
 
+    def test_fdroid_archive_fallback(self):
+        import urllib.error
+        from unittest import mock
+        calls = []
+
+        def fake_open(url):
+            calls.append(url)
+            if "/repo/" in url or "example.org" in url:
+                raise urllib.error.HTTPError(url, 404, "gone", {}, None)
+            return io.BytesIO(b"apk bytes")
+        path = os.path.join(self.tmp, "moved.apk")
+        with mock.patch.object(run, "_open", fake_open), \
+                contextlib.redirect_stdout(io.StringIO()):
+            run._download("https://f-droid.org/repo/x_1.apk", path)
+            with self.assertRaises(urllib.error.HTTPError):   # no fallback
+                run._download("https://example.org/x.apk", path + "2")
+        self.assertEqual(calls[:2], ["https://f-droid.org/repo/x_1.apk",
+                                     "https://f-droid.org/archive/x_1.apk"])
+        with open(path, "rb") as fh:
+            self.assertEqual(fh.read(), b"apk bytes")
+
     def test_truth_files_are_valid(self):
         truth_dir = os.path.join(os.path.dirname(HERE), "bench", "truth")
         for name in os.listdir(truth_dir):

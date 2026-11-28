@@ -1,0 +1,46 @@
+name: bench
+
+# Rescan the pinned benchmark apps and fail when any rule's precision or
+# recall drops below the committed bench/metrics.json. A change meant to move
+# the numbers updates metrics.json in the same PR (run bench/run.py without
+# --check and commit the result).
+
+on:
+  push:
+    branches: [main]
+    paths: ["masa/**", "bench/**", ".github/workflows/bench.yml"]
+  pull_request:
+    paths: ["masa/**", "bench/**", ".github/workflows/bench.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      # ~120 MB of apps; the key changes only when the corpus does
+      - uses: actions/cache@v4
+        with:
+          path: bench/apps
+          key: bench-apps-${{ hashFiles('bench/corpus.json') }}
+      - name: benchmark
+        run: python bench/run.py --check
+      - name: summary
+        if: always()
+        run: |
+          if [ -f bench/BENCHMARK.md ]; then
+            cat bench/BENCHMARK.md >> "$GITHUB_STEP_SUMMARY"
+          fi

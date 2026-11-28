@@ -6,6 +6,13 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- CI job `bench` runs `bench/run.py --check` on changes to `masa/` or
+  `bench/` and fails when a rule's precision or recall drops. Apps are
+  cached by `corpus.json` hash; F-Droid downloads fall back to
+  `/archive/` once a version leaves `/repo/` (the sha256 pin still holds).
+
 ## [1.4.0] - 2026-11-28
 
 Rules tuned against a labelled benchmark of 12 real apps: precision 88%,

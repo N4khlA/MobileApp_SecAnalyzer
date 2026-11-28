@@ -225,6 +225,11 @@ are code-level weaknesses (credentials in logs, a hardcoded IV) that dex
 strings alone cannot show. To reproduce, run `python bench/run.py`; it
 downloads the pinned apps (about 120 MB) and rescores them.
 
+CI runs `python bench/run.py --check` on every change to `masa/` or
+`bench/` and fails if any rule's precision or recall drops below
+`bench/metrics.json`. A change meant to move the numbers commits the new
+`metrics.json` (rerun without `--check`).
+
 ---
 
 ## OWASP Mobile Top 10 (2023) Coverage

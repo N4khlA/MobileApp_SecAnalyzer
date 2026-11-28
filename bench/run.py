@@ -22,6 +22,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +43,28 @@ def _sha256(path):
     return h.hexdigest()
 
 
+def _download(url, path):
+    try:
+        resp = _open(url)
+    except urllib.error.HTTPError as exc:
+        # F-Droid moves older versions from /repo/ to /archive/; the pinned
+        # sha256 still proves it is the same file
+        if exc.code != 404 or "f-droid.org/repo/" not in url:
+            raise
+        url = url.replace("f-droid.org/repo/", "f-droid.org/archive/")
+        resp = _open(url)
+    print("fetching %s" % url)
+    with resp, open(path + ".part", "wb") as fh:
+        for chunk in iter(lambda: resp.read(1 << 20), b""):
+            fh.write(chunk)
+    os.replace(path + ".part", path)
+
+
+def _open(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "masa-bench"})
+    return urllib.request.urlopen(req, timeout=120)
+
+
 def fetch(corpus, apps_dir):
     """Download missing apps and check every app against its pinned sha256.
     Returns True when an empty sha256 was filled in (corpus needs saving)."""
@@ -52,14 +75,7 @@ def fetch(corpus, apps_dir):
             app["url"])[1])
         app["path"] = path
         if not os.path.exists(path):
-            print("fetching %s" % app["url"])
-            req = urllib.request.Request(app["url"],
-                                         headers={"User-Agent": "masa-bench"})
-            with urllib.request.urlopen(req, timeout=120) as resp, \
-                    open(path + ".part", "wb") as fh:
-                for chunk in iter(lambda: resp.read(1 << 20), b""):
-                    fh.write(chunk)
-            os.replace(path + ".part", path)
+            _download(app["url"], path)
         digest = _sha256(path)
         if not app.get("sha256"):
             app["sha256"] = digest
