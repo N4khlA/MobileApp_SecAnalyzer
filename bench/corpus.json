@@ -3,72 +3,72 @@
     "name": "InsecureBankv2",
     "kind": "vulnerable",
     "url": "https://raw.githubusercontent.com/dineshshetty/Android-InsecureBankv2/master/InsecureBankv2.apk",
-    "sha256": ""
+    "sha256": "b18af2a0e44d7634bbcdf93664d9c78a2695e050393fcfbb5e8b91f902d194a4"
   },
   {
     "name": "UnCrackable-Android-L1",
     "kind": "vulnerable",
     "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/Android/Level_01/UnCrackable-Level1.apk",
-    "sha256": ""
+    "sha256": "1da8bf57d266109f9a07c01bf7111a1975ce01f190b9d914bcd3ae3dbef96f21"
   },
   {
     "name": "UnCrackable-Android-L2",
     "kind": "hardened",
     "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/Android/Level_02/UnCrackable-Level2.apk",
-    "sha256": ""
+    "sha256": "4c7980ef1f6cc29508f38417c2a5b5b7721eeb4a3d7f00a0c1a08f5192fa6ddd"
   },
   {
     "name": "UnCrackable-Android-L3",
     "kind": "hardened",
     "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/Android/Level_03/UnCrackable-Level3.apk",
-    "sha256": ""
+    "sha256": "6827f776b7d2844342711be6f13695ae8d1a5f209fc0072dbaf8b85e2fcff4b7"
   },
   {
     "name": "UnCrackable-iOS-L1",
     "kind": "hardened",
     "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/iOS/Level_01/UnCrackable-Level1.ipa",
-    "sha256": ""
+    "sha256": "8ade899b5f574f92dc2f1fb9fcf7093d9c6297e288985526391279cc5ae1db0f"
   },
   {
     "name": "de.danoeh.antennapod",
     "kind": "clean",
     "url": "https://f-droid.org/repo/de.danoeh.antennapod_3130095.apk",
-    "sha256": ""
+    "sha256": "61ebc5e7fba80c671e227363dd43b62ee0a1b572a5dcb66593877a9131765b95"
   },
   {
     "name": "org.schabi.newpipe",
     "kind": "clean",
     "url": "https://f-droid.org/repo/org.schabi.newpipe_1017.apk",
-    "sha256": ""
+    "sha256": "576228432fd261ab3d34b30ea9d5a23b3d53022e18c98f5b5e2e18b885988f05"
   },
   {
     "name": "org.tasks",
     "kind": "clean",
     "url": "https://f-droid.org/repo/org.tasks_151410.apk",
-    "sha256": ""
+    "sha256": "71a9d63461d9e49e29b49517607bc3f9d50ef4851967fe61a3fcf2b6952c6b9f"
   },
   {
     "name": "eu.faircode.email",
     "kind": "clean",
     "url": "https://f-droid.org/repo/eu.faircode.email_2341.apk",
-    "sha256": ""
+    "sha256": "853d3ce8f518e157038a01153368afbd2c67ef18ee32891018763b481aec83ef"
   },
   {
     "name": "com.fsck.k9",
     "kind": "clean",
     "url": "https://f-droid.org/repo/com.fsck.k9_39047.apk",
-    "sha256": ""
+    "sha256": "f2b7f38371f331636a5100bbc89b1c0bf8996548246c3a7966f13b188c897876"
   },
   {
     "name": "org.fossify.notes",
     "kind": "clean",
     "url": "https://f-droid.org/repo/org.fossify.notes_13.apk",
-    "sha256": ""
+    "sha256": "5a56e0e39cc488e1f3b947d3801006d3b7450ec73c67f03195c64c5fd3b6bced"
   },
   {
     "name": "com.github.libretube",
     "kind": "clean",
     "url": "https://f-droid.org/repo/com.github.libretube_72.apk",
-    "sha256": ""
+    "sha256": "792b1e37e7bd6a26d8da1c826a68677465c333633cb2198224cc96c84257d615"
   }
 ]
