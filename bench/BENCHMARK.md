@@ -6,24 +6,24 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 |---|---|
 | Recall (expected weaknesses found) | 57% (8/14) |
 | Precision (labelled findings) | 100% (30/30) |
-| Findings not labelled yet | 1229 |
+| Findings not labelled yet | 799 |
 
 ## Apps
 
 | App | Kind | Findings | Coverage | Seconds |
 |---|---|---:|---|---:|
-| InsecureBankv2 | vulnerable | 84 | complete | 3.0 |
+| InsecureBankv2 | vulnerable | 72 | complete | 2.9 |
 | UnCrackable-Android-L1 | vulnerable | 6 | complete | 0.0 |
 | UnCrackable-Android-L2 | hardened | 6 | complete | 0.6 |
-| UnCrackable-Android-L3 | hardened | 16 | complete | 1.2 |
+| UnCrackable-Android-L3 | hardened | 11 | complete | 1.1 |
 | UnCrackable-iOS-L1 | hardened | 4 | complete | 0.0 |
-| de.danoeh.antennapod | clean | 94 | complete | 6.8 |
-| org.schabi.newpipe | clean | 345 | complete | 9.6 |
-| org.tasks | clean | 176 | complete | 24.3 |
-| eu.faircode.email | clean | 218 | complete | 24.4 |
-| com.fsck.k9 | clean | 79 | complete | 7.9 |
-| org.fossify.notes | clean | 52 | complete | 2.8 |
-| com.github.libretube | clean | 179 | complete | 6.5 |
+| de.danoeh.antennapod | clean | 51 | complete | 6.6 |
+| org.schabi.newpipe | clean | 225 | complete | 9.3 |
+| org.tasks | clean | 92 | complete | 25.8 |
+| eu.faircode.email | clean | 169 | complete | 22.8 |
+| com.fsck.k9 | clean | 41 | complete | 7.6 |
+| org.fossify.notes | clean | 39 | complete | 3.4 |
+| com.github.libretube | clean | 113 | complete | 7.1 |
 
 ## Rules
 
@@ -61,7 +61,7 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 | PERM-003 | Dangerous Permission Combination | - | - | 4 |
 | PERM-004 | High-Risk Privilege Escalation Permission | - | - | 1 |
 | PRI-001 | Device Identifiers Collected (IMEI/MAC/IDFA) | - | - | 13 |
-| PRI-002 | Analytics/Tracking SDK Present | - | - | 431 |
+| PRI-002 | Analytics/Tracking SDK Present | - | - | 1 |
 | PRI-005 | No Screenshot Protection (FLAG_SECURE) | - | - | 11 |
 | SCP-001 | Outdated Target SDK Version | 100% (1/1) | 100% (1/1) | 3 |
 | SCP-002 | Legacy Apache HTTP Client | - | - | 2 |

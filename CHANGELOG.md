@@ -40,6 +40,12 @@ semantic versioning.
   a TLS library exports `EVP_des_cbc` because it implements DES, not because
   the app uses it. Secret, endpoint and hardening checks still run on them.
   NAT-002 went from 477 hits to 0, all of them in Conscrypt.
+- PRI-002 (analytics/tracking SDK) is case-sensitive and finds Adjust by its
+  package (`com.adjust.sdk`, `ADJConfig` on iOS). `(?i)Adjust` matched the
+  word "adjust" in every app (`setAdjustViewBounds`, SQLite's
+  `whereRangeAdjust`, ...): 429 of its 431 benchmark hits, all in F-Droid
+  apps, which ban trackers. It now also detects Google Analytics by its entry
+  class. On the benchmark: 431 hits to 1, Google Analytics in InsecureBankv2.
 
 ## [1.3.1] - 2026-11-28
 

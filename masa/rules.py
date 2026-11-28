@@ -480,8 +480,11 @@ PRIVACY = [
          "Use scoped identifiers (Advertising ID with consent, or app-"
          "scoped UUIDs)."),
     Rule("PRI-002", "Analytics/Tracking SDK Present", "info", "M6", "privacy",
-         r"(?i)(?:FirebaseAnalytics|AppsFlyer|Adjust|Mixpanel|FacebookSdk|"
-         r"FlurryAgent|AppMetrica)",
+         # case-sensitive SDK class/package names: "(?i)Adjust" matched the
+         # word "adjust" in every app (setAdjustViewBounds, SQLite, ...)
+         r"FirebaseAnalytics|gms[./]analytics[./]GoogleAnalytics(?![\w$])|"
+         r"AppsFlyer|com[./]adjust[./]sdk|ADJConfig|Mixpanel|FacebookSdk|"
+         r"FlurryAgent|AppMetrica",
          "A tracking SDK is bundled. Confirm user consent is requested "
          "before collection and that PII is not shared.",
          "Implement consent management and data minimization."),

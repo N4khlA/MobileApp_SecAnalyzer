@@ -129,6 +129,25 @@ class TestFileScoping(unittest.TestCase):
             with self.subTest(s):
                 self.assertNotIn("CRY-001", dex_ids(s))
 
+    def test_tracking_sdks_by_name_not_by_english_word(self):
+        def dex_ids(s):
+            findings = []
+            Scanner(ALL_RULES).scan_strings([s], "classes.dex", findings)
+            return ids(findings)
+        for s in ("Lcom/adjust/sdk/Adjust;", "com.adjust.sdk.AdjustConfig",
+                  "ADJConfig", "Lcom/google/firebase/analytics/FirebaseAnalytics;",
+                  "Lcom/google/android/gms/analytics/GoogleAnalytics;",
+                  "Lcom/appsflyer/AppsFlyerLib;", "com.mixpanel.android.mpmetrics.MixpanelAPI"):
+            with self.subTest(s):
+                self.assertIn("PRI-002", dex_ids(s))
+        # found on real apps by bench/run.py
+        for s in ("adjustListItemSelectionBounds", "setAdjustViewBounds",
+                  "Landroid/widget/AbsListView$SelectionBoundsAdjuster;",
+                  "whereRangeAdjust", "ADJUST",
+                  "Lcom/google/android/gms/analytics/AnalyticsService;"):
+            with self.subTest(s):
+                self.assertNotIn("PRI-002", dex_ids(s))
+
     def test_code_rules_skip_docs(self):
         text = 'Cipher.getInstance("DES/ECB/PKCS5Padding")'
         self.assertIn("CRY-001", ids(scan(text, "Crypto.java")))
