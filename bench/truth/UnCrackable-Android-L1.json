@@ -1,5 +1,5 @@
 {
-  "_note": "Draft from the app's published vulnerability list; confirm each entry against the decompiled app.",
+  "_note": "Verified 2026-11-28 against MobSF's jadx decompilation: sg/vantagepoint/a/a.java calls Cipher.getInstance(\"AES\"), which Java resolves to AES/ECB/PKCS5Padding.",
   "expected": {
     "CRY-005": "decrypts its secret with AES in ECB mode"
   },

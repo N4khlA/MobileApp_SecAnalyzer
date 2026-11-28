@@ -217,10 +217,13 @@ finding is labelled against written criteria
 
 | | |
 |---|---|
-| Precision (findings that are true) | **81%** (861/1,058) |
+| Precision (findings that are true) | **81%** (867/1,064) |
 | Recall (known weaknesses found) | **57%** (8/14) |
 
-Per-rule numbers are in [bench/BENCHMARK.md](bench/BENCHMARK.md). The misses
+Per-rule numbers are in [bench/BENCHMARK.md](bench/BENCHMARK.md); a
+comparison with MobSF on the same apps is in
+[bench/COMPARISON.md](bench/COMPARISON.md) (recall 57% vs 29%, precision
+82% vs 70% on the clean apps, 10x faster). The misses
 are code-level weaknesses (credentials in logs, a hardcoded IV) that dex
 strings alone cannot show. To reproduce, run `python bench/run.py`; it
 downloads the pinned apps (about 120 MB) and rescores them.

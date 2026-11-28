@@ -51,6 +51,35 @@ Unlabelled: STO-003 for DAVx⁵ and Gotify (whether they store data externally
 is not visible), NAT-009 on Amaze's small `librootoperations.so`, PERM-002 for
 ConnectBot.
 
+## Review (2026-11-29)
+
+The labels above were all judged by one labeller (Claude). To estimate their
+error, 60 labelled findings were drawn at random (seed 2026, from 1,040) and
+re-checked against evidence independent of masa and of the first pass:
+MobSF's jadx decompilation, its manifest parser and its binary analysis.
+
+| Result | Findings |
+|---|---:|
+| Confirmed | 56 |
+| Inconclusive | 4 |
+| Contradicted | 0 |
+
+The four inconclusive ones are tp labels where the string is real but the
+app's own use is not shown: KeePassDX's exact `"DES"` and `"rc4"` (MobSF
+finds no weak-cipher code; likely library algorithm names), F-Droid's
+STO-003 (external storage only inside logback/ACRA) and NetGuard's PRI-001
+`getDeviceId` (no device-ID code). They point at the generous edge of the
+criteria: an exact transformation string, or an API reference in an app that
+holds the permission, is counted as use.
+
+The ground truth (`expected`) for InsecureBankv2 and UnCrackable L1 was
+verified against decompiled code too: all 14 entries hold (see `_note` in
+each truth file).
+
+MobSF's binary analysis also settled six NAT-009 findings that had been left
+unlabelled (`libdatastore_shared_counter.so` in Tasks and K-9): MobSF reports
+no stack canary on exactly the ABIs masa flagged.
+
 Corrections after the first pass: UnCrackable L3's BIN-002 is tp (its Java
 classes are not renamed; its protection is native), and the exact `RC4`/`rc4`
 strings are tp, as the CRY criterion says.

@@ -6,6 +6,16 @@ semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `bench/COMPARISON.md`: masa vs MobSF 4.6.9 on the 32 benchmark apps
+  (`bench/mobsf.py` drives MobSF's REST API). Recall 8/14 vs 4/14, precision
+  on the clean apps 82% vs 70% (sampled), 500 s vs 5,076 s.
+- Label review: 60 random labels re-checked against MobSF's decompiled code,
+  manifest parser and binary analysis: 56 confirmed, 4 inconclusive, 0
+  contradicted. The InsecureBankv2 and UnCrackable L1 ground truth is now
+  verified against decompiled code.
+
 ## [1.4.1] - 2026-11-29
 
 ### Added

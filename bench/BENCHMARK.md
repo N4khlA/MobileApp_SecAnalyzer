@@ -5,8 +5,8 @@ masa 1.4.1, scanned without a decompiler (dex and binary strings, resources, man
 | | |
 |---|---|
 | Recall (expected weaknesses found) | 57% (8/14) |
-| Precision (labelled findings) | 81% (861/1058) |
-| Findings not labelled yet | 47 |
+| Precision (labelled findings) | 81% (867/1064) |
+| Findings not labelled yet | 41 |
 
 ## Apps
 
@@ -70,7 +70,7 @@ masa 1.4.1, scanned without a decompiler (dex and binary strings, resources, man
 | CRY-011 | RSA Without OAEP Padding | - | 73% (22/30) | 0 |
 | LOG-001 | Sensitive Data Written to Logs | 0% (0/1) | - | 0 |
 | NAT-007 | No RELRO in Native Library | - | 100% (3/3) | 0 |
-| NAT-009 | No Stack Canary in Native Binary | - | 80% (4/5) | 11 |
+| NAT-009 | No Stack Canary in Native Binary | - | 91% (10/11) | 5 |
 | NET-001 | Cleartext HTTP URL | 100% (1/1) | 17% (26/149) | 0 |
 | NET-002 | Cleartext Traffic Enabled in Manifest | - | 100% (7/7) | 0 |
 | NET-004 | Certificate Validation Disabled (Trust-All) | - | 100% (2/2) | 0 |

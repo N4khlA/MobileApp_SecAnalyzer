@@ -54,9 +54,10 @@ The goal of v1.4 is a precision/recall table that no one can argue with.
 - [x] Add a `bench/run.py` script that writes per-rule TP/FP/FN, then a
       `BENCHMARK.md` table and a CI job that fails when precision regresses.
       *Done: `.github/workflows/bench.yml` runs `--check` on every change.*
-- [ ] **Head-to-head comparison** with MobSF and semgrep's mobile rules on the same
+- [~] **Head-to-head comparison** with MobSF and semgrep's mobile rules on the same
       corpus, covering precision, recall, scan time and install size. This is
-      the README headline and a paper section.
+      the README headline and a paper section. *MobSF done
+      (`bench/COMPARISON.md`); semgrep not yet.*
 - [x] Demote or delete any rule below roughly 50% precision on the clean corpus,
       and log it in the CHANGELOG the way the existing "confesses everything"
       entries do. *Nine rules fixed (66% -> 88% overall); NET-001 demoted

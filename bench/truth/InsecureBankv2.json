@@ -1,5 +1,5 @@
 {
-  "_note": "Draft from the app's published vulnerability list; confirm each entry against the decompiled app.",
+  "_note": "Verified 2026-11-28 against MobSF's jadx decompilation: Log.d of username:password (DoLogin), credentials in SharedPreferences opened MODE_WORLD_READABLE (DoLogin, MyBroadCastReceiver), Environment.getExternalStorageDirectory (DoTransfer, ViewStatement), plain SQLiteDatabase (TrackUserContentProvider), \"http://\" URLs (DoLogin, DoTransfer, ChangePassword), setJavaScriptEnabled(true) (ViewStatement), all-zero IV and key \"This is the super secret key 123\" (CryptoClass), unrenamed classes. Manifest entries confirmed by MobSF's own parser (debuggable, allowBackup, exported components); targetSdk 22.",
   "expected": {
     "CFG-001": "PostLogin, DoTransfer, ViewStatement, a content provider and a broadcast receiver are exported",
     "CFG-002": "android:allowBackup=\"true\"",
