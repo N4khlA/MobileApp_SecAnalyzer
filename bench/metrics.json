@@ -7,10 +7,10 @@
     "unlabelled": 1
   },
   "BIN-003": {
-    "fp": 3,
+    "fp": 5,
     "hit": 0,
     "miss": 0,
-    "tp": 7,
+    "tp": 18,
     "unlabelled": 0
   },
   "BIN-004": {
@@ -31,14 +31,21 @@
     "fp": 0,
     "hit": 1,
     "miss": 0,
-    "tp": 81,
+    "tp": 222,
     "unlabelled": 0
   },
   "CFG-002": {
     "fp": 0,
     "hit": 1,
     "miss": 0,
-    "tp": 10,
+    "tp": 24,
+    "unlabelled": 0
+  },
+  "CFG-003": {
+    "fp": 0,
+    "hit": 0,
+    "miss": 0,
+    "tp": 2,
     "unlabelled": 0
   },
   "CFG-004": {
@@ -49,7 +56,7 @@
     "unlabelled": 0
   },
   "CFG-005": {
-    "fp": 0,
+    "fp": 2,
     "hit": 0,
     "miss": 0,
     "tp": 4,
@@ -59,25 +66,32 @@
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 2,
+    "tp": 3,
     "unlabelled": 0
   },
   "CFG-007": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 6,
+    "tp": 8,
     "unlabelled": 0
   },
   "CRY-001": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 7,
+    "tp": 30,
+    "unlabelled": 0
+  },
+  "CRY-002": {
+    "fp": 3,
+    "hit": 0,
+    "miss": 0,
+    "tp": 1,
     "unlabelled": 0
   },
   "CRY-003": {
-    "fp": 0,
+    "fp": 3,
     "hit": 0,
     "miss": 0,
     "tp": 1,
@@ -87,14 +101,14 @@
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 4,
+    "tp": 24,
     "unlabelled": 0
   },
   "CRY-005": {
-    "fp": 1,
+    "fp": 4,
     "hit": 1,
     "miss": 0,
-    "tp": 5,
+    "tp": 17,
     "unlabelled": 0
   },
   "CRY-006": {
@@ -112,10 +126,10 @@
     "unlabelled": 0
   },
   "CRY-011": {
-    "fp": 2,
+    "fp": 8,
     "hit": 0,
     "miss": 0,
-    "tp": 5,
+    "tp": 22,
     "unlabelled": 0
   },
   "LOG-001": {
@@ -125,21 +139,35 @@
     "tp": 0,
     "unlabelled": 0
   },
-  "NAT-009": {
+  "NAT-007": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
+    "tp": 3,
+    "unlabelled": 0
+  },
+  "NAT-009": {
+    "fp": 1,
+    "hit": 0,
+    "miss": 0,
     "tp": 4,
-    "unlabelled": 6
+    "unlabelled": 11
   },
   "NET-001": {
-    "fp": 12,
+    "fp": 123,
     "hit": 1,
     "miss": 0,
-    "tp": 6,
+    "tp": 26,
     "unlabelled": 0
   },
   "NET-002": {
+    "fp": 0,
+    "hit": 0,
+    "miss": 0,
+    "tp": 7,
+    "unlabelled": 0
+  },
+  "NET-004": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
@@ -147,10 +175,10 @@
     "unlabelled": 0
   },
   "NET-010": {
-    "fp": 24,
+    "fp": 48,
     "hit": 0,
     "miss": 0,
-    "tp": 146,
+    "tp": 195,
     "unlabelled": 0
   },
   "NET-018": {
@@ -164,35 +192,35 @@
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 16,
+    "tp": 68,
     "unlabelled": 0
   },
   "PERM-002": {
-    "fp": 2,
+    "fp": 6,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 2
+    "unlabelled": 3
   },
   "PERM-003": {
-    "fp": 1,
+    "fp": 2,
     "hit": 0,
     "miss": 0,
-    "tp": 3,
+    "tp": 10,
     "unlabelled": 0
   },
   "PERM-004": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 1,
+    "tp": 28,
     "unlabelled": 0
   },
   "PRI-001": {
-    "fp": 0,
+    "fp": 10,
     "hit": 0,
     "miss": 0,
-    "tp": 1,
+    "tp": 8,
     "unlabelled": 0
   },
   "PRI-002": {
@@ -207,7 +235,7 @@
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 11
+    "unlabelled": 29
   },
   "SCP-001": {
     "fp": 0,
@@ -217,14 +245,14 @@
     "unlabelled": 0
   },
   "SCP-002": {
-    "fp": 0,
+    "fp": 4,
     "hit": 0,
     "miss": 0,
-    "tp": 2,
+    "tp": 4,
     "unlabelled": 0
   },
   "SCP-003": {
-    "fp": 0,
+    "fp": 5,
     "hit": 0,
     "miss": 0,
     "tp": 1,
@@ -255,14 +283,14 @@
     "fp": 3,
     "hit": 1,
     "miss": 0,
-    "tp": 28,
-    "unlabelled": 0
+    "tp": 90,
+    "unlabelled": 4
   },
   "STO-004": {
     "fp": 0,
     "hit": 0,
     "miss": 1,
-    "tp": 2,
+    "tp": 5,
     "unlabelled": 0
   }
 }

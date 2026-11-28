@@ -5,8 +5,8 @@ masa 1.4.0, scanned without a decompiler (dex and binary strings, resources, man
 | | |
 |---|---|
 | Recall (expected weaknesses found) | 57% (8/14) |
-| Precision (labelled findings) | 88% (357/405) |
-| Findings not labelled yet | 20 |
+| Precision (labelled findings) | 79% (840/1067) |
+| Findings not labelled yet | 48 |
 
 ## Apps
 
@@ -17,53 +17,77 @@ masa 1.4.0, scanned without a decompiler (dex and binary strings, resources, man
 | UnCrackable-Android-L2 | hardened | 4 | complete | 0.5 |
 | UnCrackable-Android-L3 | hardened | 8 | complete | 1.1 |
 | UnCrackable-iOS-L1 | hardened | 4 | complete | 0.0 |
-| de.danoeh.antennapod | clean | 34 | complete | 6.5 |
-| org.schabi.newpipe | clean | 61 | complete | 8.9 |
-| org.tasks | clean | 71 | complete | 20.3 |
-| eu.faircode.email | clean | 69 | complete | 22.3 |
-| com.fsck.k9 | clean | 37 | complete | 7.1 |
+| de.danoeh.antennapod | clean | 34 | complete | 6.4 |
+| org.schabi.newpipe | clean | 61 | complete | 8.6 |
+| org.tasks | clean | 71 | complete | 23.3 |
+| eu.faircode.email | clean | 69 | complete | 20.1 |
+| com.fsck.k9 | clean | 37 | complete | 6.6 |
 | org.fossify.notes | clean | 16 | complete | 2.6 |
-| com.github.libretube | clean | 59 | complete | 5.7 |
+| com.github.libretube | clean | 59 | complete | 6.0 |
+| com.beemdevelopment.aegis | clean | 7 | complete | 5.2 |
+| com.kunzisoft.keepass.libre | clean | 21 | complete | 20.2 |
+| org.connectbot | clean | 16 | complete | 7.5 |
+| eu.siacs.conversations | clean | 75 | complete | 8.7 |
+| eu.faircode.netguard | clean | 15 | complete | 1.9 |
+| at.bitfire.davdroid | clean | 42 | complete | 14.5 |
+| org.fdroid.fdroid | clean | 51 | complete | 13.3 |
+| org.kde.kdeconnect_tp | clean | 54 | complete | 6.1 |
+| me.zhanghai.android.files | clean | 29 | complete | 5.6 |
+| com.amaze.filemanager | clean | 38 | complete | 7.5 |
+| io.github.muntashirakon.AppManager | clean | 77 | complete | 24.4 |
+| org.quantumbadger.redreader | clean | 27 | complete | 4.7 |
+| com.aurora.store | clean | 28 | complete | 4.8 |
+| de.dennisguse.opentracks | clean | 42 | complete | 11.7 |
+| org.joinmastodon.android | clean | 13 | complete | 1.5 |
+| org.fossify.messages | clean | 20 | complete | 2.3 |
+| dev.imranr.obtainium.fdroid | clean | 79 | complete | 13.8 |
+| org.jellyfin.mobile | clean | 11 | complete | 4.6 |
+| com.github.gotify | clean | 25 | complete | 9.5 |
+| org.isoron.uhabits | clean | 20 | complete | 6.4 |
 
 ## Rules
 
 | Rule | Title | Recall | Precision | Unlabelled |
 |---|---|---|---|---:|
 | BIN-002 | No Code Obfuscation/Minification Evidence | 100% (1/1) | 100% (2/2) | 1 |
-| BIN-003 | No Root/Jailbreak Detection Evidence | - | 70% (7/10) | 0 |
+| BIN-003 | No Root/Jailbreak Detection Evidence | - | 78% (18/23) | 0 |
 | BIN-004 | Mach-O Binary Not Encrypted | - | 100% (1/1) | 0 |
 | BIN-005 | APK Signed Only With v1 Scheme (Janus) | - | 100% (2/2) | 0 |
-| CFG-001 | Exported Component Without Permission | 100% (1/1) | 100% (81/81) | 0 |
-| CFG-002 | Backup Enabled (allowBackup=true) | 100% (1/1) | 100% (10/10) | 0 |
+| CFG-001 | Exported Component Without Permission | 100% (1/1) | 100% (222/222) | 0 |
+| CFG-002 | Backup Enabled (allowBackup=true) | 100% (1/1) | 100% (24/24) | 0 |
+| CFG-003 | Backup Enabled Without Backup Rules | - | 100% (2/2) | 0 |
 | CFG-004 | Debuggable Application | 100% (1/1) | 100% (1/1) | 0 |
-| CFG-005 | Staging/Test Endpoint in Production Build | - | 100% (4/4) | 0 |
-| CFG-006 | Content Provider Partially Protected | - | 100% (2/2) | 0 |
-| CFG-007 | Component Guarded by Weak Custom Permission | - | 100% (6/6) | 0 |
-| CRY-001 | Deprecated DES / 3DES Cipher | - | 100% (7/7) | 0 |
-| CRY-003 | SHA-1 Hash Function | - | 100% (1/1) | 0 |
-| CRY-004 | RC4 Stream Cipher | - | 100% (4/4) | 0 |
-| CRY-005 | ECB Encryption Mode | 100% (1/1) | 83% (5/6) | 0 |
+| CFG-005 | Staging/Test Endpoint in Production Build | - | 67% (4/6) | 0 |
+| CFG-006 | Content Provider Partially Protected | - | 100% (3/3) | 0 |
+| CFG-007 | Component Guarded by Weak Custom Permission | - | 100% (8/8) | 0 |
+| CRY-001 | Deprecated DES / 3DES Cipher | - | 100% (30/30) | 0 |
+| CRY-002 | MD5 Hash Function | - | 25% (1/4) | 0 |
+| CRY-003 | SHA-1 Hash Function | - | 25% (1/4) | 0 |
+| CRY-004 | RC4 Stream Cipher | - | 100% (24/24) | 0 |
+| CRY-005 | ECB Encryption Mode | 100% (1/1) | 81% (17/21) | 0 |
 | CRY-006 | Hardcoded Initialization Vector | 0% (0/1) | - | 0 |
 | CRY-008 | Raw Password Used as Crypto Key | 0% (0/1) | - | 0 |
-| CRY-011 | RSA Without OAEP Padding | - | 71% (5/7) | 0 |
+| CRY-011 | RSA Without OAEP Padding | - | 73% (22/30) | 0 |
 | LOG-001 | Sensitive Data Written to Logs | 0% (0/1) | - | 0 |
-| NAT-009 | No Stack Canary in Native Binary | - | 100% (4/4) | 6 |
-| NET-001 | Cleartext HTTP URL | 100% (1/1) | 33% (6/18) | 0 |
-| NET-002 | Cleartext Traffic Enabled in Manifest | - | 100% (2/2) | 0 |
-| NET-010 | Hardcoded API Endpoint | - | 86% (146/170) | 0 |
+| NAT-007 | No RELRO in Native Library | - | 100% (3/3) | 0 |
+| NAT-009 | No Stack Canary in Native Binary | - | 80% (4/5) | 11 |
+| NET-001 | Cleartext HTTP URL | 100% (1/1) | 17% (26/149) | 0 |
+| NET-002 | Cleartext Traffic Enabled in Manifest | - | 100% (7/7) | 0 |
+| NET-004 | Certificate Validation Disabled (Trust-All) | - | 100% (2/2) | 0 |
+| NET-010 | Hardcoded API Endpoint | - | 80% (195/243) | 0 |
 | NET-018 | WebView JavaScript Enabled | 0% (0/1) | - | 0 |
-| PERM-001 | Dangerous Permission Declared | - | 100% (16/16) | 0 |
-| PERM-002 | Dangerous Permission Declared But Unused | - | 0% (0/2) | 2 |
-| PERM-003 | Dangerous Permission Combination | - | 75% (3/4) | 0 |
-| PERM-004 | High-Risk Privilege Escalation Permission | - | 100% (1/1) | 0 |
-| PRI-001 | Device Identifiers Collected (IMEI/MAC/IDFA) | - | 100% (1/1) | 0 |
+| PERM-001 | Dangerous Permission Declared | - | 100% (68/68) | 0 |
+| PERM-002 | Dangerous Permission Declared But Unused | - | 0% (0/6) | 3 |
+| PERM-003 | Dangerous Permission Combination | - | 83% (10/12) | 0 |
+| PERM-004 | High-Risk Privilege Escalation Permission | - | 100% (28/28) | 0 |
+| PRI-001 | Device Identifiers Collected (IMEI/MAC/IDFA) | - | 44% (8/18) | 0 |
 | PRI-002 | Analytics/Tracking SDK Present | - | 100% (1/1) | 0 |
-| PRI-005 | No Screenshot Protection (FLAG_SECURE) | - | - | 11 |
+| PRI-005 | No Screenshot Protection (FLAG_SECURE) | - | - | 29 |
 | SCP-001 | Outdated Target SDK Version | 100% (1/1) | 100% (4/4) | 0 |
-| SCP-002 | Legacy Apache HTTP Client | - | 100% (2/2) | 0 |
-| SCP-003 | Dynamic Code Loading | - | 100% (1/1) | 0 |
+| SCP-002 | Legacy Apache HTTP Client | - | 50% (4/8) | 0 |
+| SCP-003 | Dynamic Code Loading | - | 17% (1/6) | 0 |
 | SCP-004 | Outdated Minimum OS Version | - | 100% (1/1) | 0 |
 | SEC-002 | Hardcoded Google API Key | - | 100% (1/1) | 0 |
 | STO-001 | Sensitive Data in SharedPreferences (Android) | 0% (0/1) | - | 0 |
-| STO-003 | External Storage Used for App Data | 100% (1/1) | 90% (28/31) | 0 |
-| STO-004 | Plaintext SQLite Database | 0% (0/1) | 100% (2/2) | 0 |
+| STO-003 | External Storage Used for App Data | 100% (1/1) | 97% (90/93) | 4 |
+| STO-004 | Plaintext SQLite Database | 0% (0/1) | 100% (5/5) | 0 |

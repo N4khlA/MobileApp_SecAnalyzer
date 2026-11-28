@@ -59,6 +59,18 @@ class TestTaxonomy(unittest.TestCase):
                 if rule.masvs:
                     self.assertRegex(rule.masvs, r"^MASVS-[A-Z]+-\d$")
 
+    def test_programmatic_findings_carry_their_ids(self):
+        # manifest/binary/behaviour findings used to drop CWE and MASVS
+        import tempfile as _t
+        from masa.apk import analyze_apk
+        from masa.samples import build_apk
+        d = _t.mkdtemp(prefix="masa_taxa_")
+        self.addCleanup(shutil.rmtree, d, True)
+        for f in analyze_apk(build_apk(d), use_decompiler=False).findings:
+            cwe, masvs = TAXA[f.rule.id]
+            with self.subTest(f.rule.id):
+                self.assertEqual((f.to_dict()["cwe"], f.to_dict()["masvs"]), (cwe, masvs))
+
     def test_sarif_rule_tags(self):
         f = Finding(BY_ID["SEC-001"], file="a.java", line=1, snippet=AWS)
         data = {"findings": [f.to_dict()],
@@ -85,26 +97,35 @@ class TestFileScoping(unittest.TestCase):
         self.assertIn("CRY-002", found)
         self.assertNotIn("NAT-002", found)
 
-    def test_native_rule_matches_openssl_symbols(self):
-        for sym in ("MD5_Init", "DES_key_schedule", "RC4_set_key"):
-            with self.subTest(sym):
-                findings = []
-                Scanner(ALL_RULES).scan_strings([sym], "lib/x/libc.so",
-                                                findings)
-                self.assertIn("NAT-002", ids(findings))
+    def test_weak_native_crypto_is_an_import_not_a_string(self):
+        from masa import native
+        from masa.samples import make_elf64
 
-    def test_crypto_libraries_are_not_judged_on_what_they_implement(self):
+        def nat002(blob):
+            return [f.snippet for f in native.analyze_binary(blob, "lib/x/libapp.so")[1]
+                    if f.rule.id == "NAT-002"]
+        weak = ("MD5_Init", "DES_key_schedule", "RC4_set_key", "EVP_sha1")
+        # a library that calls libcrypto's weak primitives
+        self.assertEqual(sorted(nat002(make_elf64(b"", imports=weak + ("puts",)))),
+                         sorted(weak))
+        # a library that implements them (BoringSSL inside libflutter.so,
+        # libcronet, WebRTC): exports and name tables are not use
+        impl = make_elf64(b"DES-EDE3-CBC\x00ecdsa-with-SHA1\x00sha1_compile\x00",
+                          imports=("malloc",), exports=weak)
+        self.assertEqual(nat002(impl), [])
+
+    def test_crypto_libraries_skip_weak_crypto_string_rules(self):
         def native_ids(strings, name):
             findings = []
             Scanner(ALL_RULES).scan_strings(strings, name, findings)
             return ids(findings)
-        weak = ["EVP_des_cbc", "DES_set_key", "EVP_md5"]
-        self.assertIn("NAT-002", native_ids(weak, "lib/arm64-v8a/libapp.so"))
+        weak = ["RC4", "AES/ECB/NoPadding"]
+        self.assertTrue({"CRY-004", "CRY-005"} <= native_ids(weak, "lib/arm64-v8a/libapp.so"))
         for lib in ("libconscrypt_jni.so", "libcrypto.so", "libssl.so.3"):
             with self.subTest(lib):
                 found = native_ids(weak + ["AKIAIOSFODNN7EXAMPLE"],
                                    "lib/arm64-v8a/" + lib)
-                self.assertNotIn("NAT-002", found)
+                self.assertFalse({"CRY-004", "CRY-005"} & found)
                 self.assertIn("SEC-001", found)   # other rules still run
 
     def test_des_rule_wants_a_transformation_not_a_catalog(self):
@@ -172,7 +193,8 @@ class TestFileScoping(unittest.TestCase):
         cases = [  # (rule, should fire, text, file)
             ("NET-008", True, 'u = "http://192.168.1.20:8080/api";', "A.java"),
             ("NET-008", False, 'u = "http://127.0.0.1:8080/";', "A.java"),
-            ("NET-006", True, "config.allowInsecure = true;", "A.java"),
+            ("NET-006", True, "sslPinning = false;", "A.java"),
+            ("NET-006", False, '"allowInsecure": "Allow insecure HTTP requests",', "en.json"),
             ("NET-006", False, "builder.forceAllowInsecureDecoderComponents(true);", "A.java"),
             ("IPC-004", True, 'checkCallingOrSelfPermission("x.ADMIN");', "A.java"),
             ("INP-002", True, "File f = new File(dir, name);", "A.java"),
@@ -191,6 +213,31 @@ class TestFileScoping(unittest.TestCase):
             with self.subTest(rule=rule, s=s):
                 self.assertNotIn(rule, dex_ids(s))
         self.assertIn("CRY-004", dex_ids("RC4"))
+
+    def test_private_key_needs_a_body(self):
+        body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7" * 2
+        key = "-----BEGIN PRIVATE KEY-----\n%s\n-----END PRIVATE KEY-----" % body
+        enc = ("-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\n"
+               "DEK-Info: AES-128-CBC,3F17F5316E2BAC89\n\n%s\n" % body)
+        self.assertIn("SEC-007", ids(scan(key, "res/raw/key.pem")))
+        self.assertIn("SEC-007", ids(scan(enc, "res/raw/key.pem")))
+        # PEM parser constants (sshj, BouncyCastle): header only
+        for s in ("-----BEGIN OPENSSH PRIVATE KEY-----",
+                  "File header not found [-----BEGIN OPENSSH PRIVATE KEY-----]"):
+            with self.subTest(s):
+                findings = []
+                Scanner(ALL_RULES).scan_strings([s], "classes.dex", findings)
+                self.assertNotIn("SEC-007", ids(findings))
+
+    def test_credits_and_license_texts_by_content(self):
+        url = 'u = "http://www.slf4j.org/x"'
+        credits = '{"libraries": [{"uniqueId": "org.slf4j:slf4j-api", "artifactVersion": "2.0", "website": "http://www.slf4j.org"}]}'
+        gpl = "    GNU GENERAL PUBLIC LICENSE\n  Version 2\n see http://www.gnu.org/philosophy/x.html"
+        self.assertIn("NET-001", ids(scan(url, "res/M7.json")))
+        self.assertNotIn("NET-001", ids(scan(credits, "res/M7.json")))
+        self.assertNotIn("NET-001", ids(scan(gpl, "res/XB")))
+        self.assertIn("SEC-001", ids(scan(gpl + "\n" + AWS, "res/XB")))  # secrets still found
+        self.assertNotIn("NET-001", ids(scan('"http://jabber.org/protocol/disco#info"', "A.java")))
 
     def test_code_rules_skip_docs(self):
         text = 'Cipher.getInstance("DES/ECB/PKCS5Padding")'

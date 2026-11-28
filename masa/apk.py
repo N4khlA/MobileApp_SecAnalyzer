@@ -470,11 +470,8 @@ def _drop_manifest_view_duplicates(findings):
 
 
 def _rule(id_):
-    r = BY_ID.get(id_)
-    if r:
-        return Rule(id_, r.title, r.severity, r.owasp, r.category,
-                    description=r.description, remediation=r.remediation)
-    return Rule(id_, id_, "medium", "M8", "config")
+    # the shared rule, so findings carry its CWE/MASVS ids
+    return BY_ID.get(id_) or Rule(id_, id_, "medium", "M8", "config")
 
 
 def _skip_large(result, name, size):

@@ -70,5 +70,125 @@
     "kind": "clean",
     "url": "https://f-droid.org/repo/com.github.libretube_72.apk",
     "sha256": "792b1e37e7bd6a26d8da1c826a68677465c333633cb2198224cc96c84257d615"
+  },
+  {
+    "name": "com.beemdevelopment.aegis",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.beemdevelopment.aegis_82.apk",
+    "sha256": "0eecec45de0da3ff1358004b51e2960d9178551643a6ed44f6496ea9ec999c19"
+  },
+  {
+    "name": "com.kunzisoft.keepass.libre",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.kunzisoft.keepass.libre_45800.apk",
+    "sha256": "8b3c1818aebfb9196814eb2eea39da897b8f18e2404aa5b47f603fc56641c593"
+  },
+  {
+    "name": "org.connectbot",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.connectbot_11101000.apk",
+    "sha256": "96cf501a83e89284ff3ec93ac06e7a6a6aa8a35c0c02486b865945fe59ac8223"
+  },
+  {
+    "name": "eu.siacs.conversations",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/eu.siacs.conversations_4218704.apk",
+    "sha256": "61fd8ca12cdd2fd4736e1f36d995c174b5bda230435350c34a6c223f68749117"
+  },
+  {
+    "name": "eu.faircode.netguard",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/eu.faircode.netguard_2026080101.apk",
+    "sha256": "158b4308da0006298d22ed557adbff24b282fddeb1bc0b3468829a60f405a8c4"
+  },
+  {
+    "name": "at.bitfire.davdroid",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/at.bitfire.davdroid_405210002.apk",
+    "sha256": "41cf9832d97c31e3fc694e5c66b38990dec3312936cc336141714db07259081b"
+  },
+  {
+    "name": "org.fdroid.fdroid",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.fdroid.fdroid_2000053.apk",
+    "sha256": "dac55a0d17b1edf7e7286b48cfbd70c7c52fbb32a00af062c68830a437c47959"
+  },
+  {
+    "name": "org.kde.kdeconnect_tp",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.kde.kdeconnect_tp_13703.apk",
+    "sha256": "95842916f30215c56b051d2068b258cfb156de93984a4ea79e7ce250bb22e14f"
+  },
+  {
+    "name": "me.zhanghai.android.files",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/me.zhanghai.android.files_40.apk",
+    "sha256": "2fe900bf43d725b655008d438f5ca46d0da0f301e3784403b5b96c3fc2df6e8a"
+  },
+  {
+    "name": "com.amaze.filemanager",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.amaze.filemanager_126.apk",
+    "sha256": "627b8cd6a5f750dc8315ebb0fadeddfea8ff76700922049d4dbf0ca22f3397fd"
+  },
+  {
+    "name": "io.github.muntashirakon.AppManager",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/io.github.muntashirakon.AppManager_451.apk",
+    "sha256": "e1f6ba10812c74016ad626e11e27a1ae450aec2c0964a11466abb9e7a9c8ef84"
+  },
+  {
+    "name": "org.quantumbadger.redreader",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.quantumbadger.redreader_119.apk",
+    "sha256": "94ae92ce67a90aee4fdb05dbe2847f5eae6a312ce5fc4a1f7799e2772b797093"
+  },
+  {
+    "name": "com.aurora.store",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.aurora.store_76.apk",
+    "sha256": "fd9c75d90d0f4a7c132b9b4a5a2cf1992a45e03b8d8ff988b7dcfbc0db2c4d11"
+  },
+  {
+    "name": "de.dennisguse.opentracks",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/de.dennisguse.opentracks_6766.apk",
+    "sha256": "f63ed60e2a4f1b3d878671bfde2150ceaa89e484618b91390500e1a583694cc1"
+  },
+  {
+    "name": "org.joinmastodon.android",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.joinmastodon.android_199.apk",
+    "sha256": "93871723fd37caa2fc563962e45659bc5cd012da556e0e6224ff63f94b0f9ce3"
+  },
+  {
+    "name": "org.fossify.messages",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.fossify.messages_27.apk",
+    "sha256": "76cb0756d22fae9b8b24683d550d7391963b9b856d331dd536f74de8bf628674"
+  },
+  {
+    "name": "dev.imranr.obtainium.fdroid",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/dev.imranr.obtainium.fdroid_23623.apk",
+    "sha256": "fe6fdfec826f50cd565e5480ae051cc5883fc65ab2ec89f3b6fd949f2e8d6e1f"
+  },
+  {
+    "name": "org.jellyfin.mobile",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.jellyfin.mobile_2070399.apk",
+    "sha256": "f9f4b3ab46cc9434df811194c2d4351417f4db83a4c1a0facd0a662d69533f7f"
+  },
+  {
+    "name": "com.github.gotify",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.github.gotify_36.apk",
+    "sha256": "26d9e6b4175586024545e5a18f57ecb4cc5acb9bae9a643c07110fc183871e6e"
+  },
+  {
+    "name": "org.isoron.uhabits",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.isoron.uhabits_20302.apk",
+    "sha256": "8a702f85afe83385d5fb61cbcf40536411376f64bbb1712910d4ed00182b8303"
   }
 ]

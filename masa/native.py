@@ -10,7 +10,8 @@ import re
 import struct
 from typing import List
 
-from .models import Finding, Rule
+from .models import Finding
+from .rules import BY_ID
 
 # ------------------------------------------------------------------ strings
 
@@ -40,6 +41,58 @@ ELF_PT_GNU_STACK = 0x6474e551
 ELF_PT_GNU_RELRO = 0x6474e552
 ELF_ET_EXEC = 2
 PF_X = 1
+
+
+SHT_DYNSYM = 11
+
+# weak primitives, matched against imported symbol names (MD5_Init, EVP_sha1)
+_WEAK_IMPORT = re.compile(r"(?i)(?<![A-Za-z0-9])(?:MD4|MD5|DES|RC4|SHA-?1|3DES)"
+                          r"(?![A-Za-z0-9])")
+
+
+def elf_imports(data):
+    """Names of undefined dynamic symbols (.dynsym entries with st_shndx 0):
+    what the library calls in other libraries, not what it implements."""
+    try:
+        is64 = data[4] == 2
+        e = "<" if data[5] == 1 else ">"
+        if is64:
+            shoff = struct.unpack_from(e + "Q", data, 40)[0]
+            shentsize, shnum = struct.unpack_from(e + "HH", data, 58)
+        else:
+            shoff = struct.unpack_from(e + "I", data, 32)[0]
+            shentsize, shnum = struct.unpack_from(e + "HH", data, 46)
+        secs = []
+        for i in range(shnum):
+            o = shoff + i * shentsize
+            if is64:
+                (_n, typ, _f, _a, off, size, link, _i, _al,
+                 entsize) = struct.unpack_from(e + "IIQQQQIIQQ", data, o)
+            else:
+                (_n, typ, _f, _a, off, size, link, _i, _al,
+                 entsize) = struct.unpack_from(e + "IIIIIIIIII", data, o)
+            secs.append((typ, off, size, link, entsize))
+        names = set()
+        for typ, off, size, link, entsize in secs:
+            if typ != SHT_DYNSYM or not entsize or link >= len(secs):
+                continue
+            stroff, strsize = secs[link][1], secs[link][2]
+            for j in range(1, size // entsize):
+                so = off + j * entsize
+                if is64:
+                    st_name, _info, _other, shndx = struct.unpack_from(
+                        e + "IBBH", data, so)
+                else:
+                    st_name, _v, _s, _info, _other, shndx = struct.unpack_from(
+                        e + "IIIBBH", data, so)
+                if shndx == 0 and 0 < st_name < strsize:
+                    start = stroff + st_name
+                    end = data.find(b"\0", start, stroff + strsize)
+                    names.add(data[start:end if end >= 0 else stroff + strsize]
+                              .decode("ascii", "replace"))
+        return names
+    except (struct.error, IndexError):
+        return set()
 
 
 def elf_info(data):
@@ -78,6 +131,7 @@ def elf_info(data):
         "pie": e_type != ELF_ET_EXEC,
         "relro": has_relro,
         "exec_stack": exec_stack,
+        "imports": sorted(elf_imports(data)),
         "strings": extract_strings(data),
     }
 
@@ -152,51 +206,10 @@ def macho_info(data):
 
 # ------------------------------------------------------------------ checks
 
-_STRUCTURAL_RULES = {
-    "non_pie": Rule("NAT-006", "Non-PIE Native Library", "medium", "M7",
-                    "native",
-                    description="The native library is a non-PIE executable: "
-                    "ASLR does not apply, making exploitation of memory bugs "
-                    "significantly easier.",
-                    remediation="Build as a PIE/shared library (default on "
-                    "modern NDKs)."),
-    "no_relro": Rule("NAT-007", "No RELRO in Native Library", "medium", "M7",
-                     "native",
-                     description="GNU_RELRO (and typically BIND_NOW) are "
-                     "missing: GOT entries are writable, enabling GOT-"
-                     "overwrite attacks.",
-                     remediation="Link with -Wl,-z,relro,-z,now."),
-    "exec_stack": Rule("NAT-008", "Executable Stack in Native Library",
-                       "medium", "M7", "native",
-                       description="The stack is marked executable "
-                       "(PT_GNU_STACK with PF_X), facilitating shellcode "
-                       "execution.",
-                       remediation="Link with -Wl,-z,noexecstack."),
-    "no_canary": Rule("NAT-009", "No Stack Canary in Native Binary",
-                      "medium", "M7", "native",
-                      description="The binary does not import "
-                      "__stack_chk_fail, so it was built without stack "
-                      "protection and stack buffer overflows are not "
-                      "detected at runtime.",
-                      remediation="Build with -fstack-protector-strong "
-                      "(default in recent NDKs and Xcode)."),
-    "no_arc": Rule("NAT-010", "Objective-C Without ARC (iOS)", "low", "M7",
-                   "native",
-                   description="The binary uses the Objective-C runtime but "
-                   "does not import objc_release, which indicates manual "
-                   "reference counting and a higher risk of use-after-free "
-                   "bugs.",
-                   remediation="Compile Objective-C with -fobjc-arc."),
-    "not_encrypted": Rule("BIN-004", "Mach-O Binary Not Encrypted", "medium",
-                          "M7", "binary",
-                          description="The Mach-O main binary has no "
-                          "encryption info / cryptid=0. Unencrypted binaries "
-                          "are trivially disassembled and patched; App Store "
-                          "builds normally enable encryption.",
-                          remediation="Distribute through the App Store "
-                          "(which encrypts binaries) and add integrity "
-                          "checks."),
-}
+_STRUCTURAL_RULES = {key: BY_ID[rid] for key, rid in {
+    "non_pie": "NAT-006", "no_relro": "NAT-007", "exec_stack": "NAT-008",
+    "no_canary": "NAT-009", "no_arc": "NAT-010", "not_encrypted": "BIN-004",
+}.items()}
 
 
 def analyze_binary(data, filename):
@@ -225,6 +238,13 @@ def analyze_binary(data, filename):
                                         extra={"binary_protection": "exec_stack"}))
             _hardening_findings(info.get("strings", []), filename, findings,
                                 check_arc=False)
+            # a library that implements DES exports DES_*; one that uses it
+            # imports DES_* from a crypto library
+            for name in info["imports"]:
+                if _WEAK_IMPORT.search(name):
+                    findings.append(Finding(BY_ID["NAT-002"], file=filename,
+                                            snippet=name, match=name,
+                                            evidence_type="binary"))
     else:
         info = macho_info(data)
         if info is not None:

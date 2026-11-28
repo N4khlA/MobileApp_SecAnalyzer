@@ -1,0 +1,28 @@
+{
+  "expected": {},
+  "labels": {
+    "04e725908fc2": "fp",
+    "4edac88967f2": "fp",
+    "dca864bcb069": "fp",
+    "3687c7a3f9b9": "fp",
+    "8449dcfeffe1": "fp",
+    "41249246ba5c": "fp",
+    "2621d2689963": "fp",
+    "cca2c1fa596d": "fp",
+    "9a0df7a6e1c9": "fp",
+    "632861b1b329": "fp",
+    "0daf5e771297": "fp",
+    "869594dbafd1": "fp",
+    "8099b0fd9f76": "tp",
+    "b8d0c26999f0": "tp",
+    "1fedf13c0c33": "tp",
+    "829430a5111b": "tp",
+    "c61df2261ff6": "tp",
+    "5bd390bddcb2": "tp",
+    "76c956abd8b9": "tp",
+    "f491f70d3308": "tp",
+    "eebfd7e6cbd8": "tp",
+    "8649be501c40": "fp"
+  },
+  "_labels": "Labels: first pass by Claude, one criterion per rule (tp = the rule's claim is true for this evidence); review before relying on them."
+}

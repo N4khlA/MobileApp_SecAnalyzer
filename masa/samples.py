@@ -242,18 +242,37 @@ DEX_STRINGS = [
 # ELF64 writer (fixture): non-RELRO, executable-stack native library
 # =====================================================================
 
-def make_elf64(data):
-    """Minimal ELF64 shared object (PIE) with two program headers."""
-    ehdr = struct.pack(
-        "<16sHHIQQQIHHHHHH",
-        b"\x7fELF" + bytes([2, 1, 1, 0]) + b"\x00" * 8,
-        3, 0xB7, 1, 0, 64, 0, 0, 64, 56, 2, 64, 0, 0)
+def make_elf64(data, imports=(), exports=()):
+    """Minimal ELF64 shared object (PIE) with two program headers and, when
+    symbols are given, a .dynstr/.dynsym pair: imports are undefined
+    (st_shndx 0), exports are defined."""
     ph = bytearray()
     ph += struct.pack("<IIQQQQQQ", 1, 5, 0, 0, 0, len(data), len(data),
                       0x1000)                 # PT_LOAD (R-X)
     ph += struct.pack("<IIQQQQQQ", 0x6474e551, 7, 0, 0, 0, 0, 0, 0x10)
-    return ehdr + bytes(ph) + data            # PT_GNU_STACK (RWX, no RELRO)
+    body = bytes(ph) + data                   # PT_GNU_STACK (RWX, no RELRO)
+    shoff = shnum = 0
+    if imports or exports:
+        dynstr, syms = b"\x00", b"\x00" * 24
+        for name, shndx in [(n, 0) for n in imports] + [(n, 1) for n in exports]:
+            syms += struct.pack("<IBBHQQ", len(dynstr), 0x12, 0, shndx, 0, 0)
+            dynstr += name.encode() + b"\x00"
+        str_off = 64 + len(body)
+        sym_off = str_off + len(dynstr)
+        shoff = sym_off + len(syms)
+        shnum = 3
+        body += dynstr + syms + b"\x00" * 64 + b"".join([   # null section
+            struct.pack("<IIQQQQIIQQ", 0, 3, 0, 0, str_off, len(dynstr), 0, 0, 1, 0),
+            struct.pack("<IIQQQQIIQQ", 0, 11, 0, 0, sym_off, len(syms), 1, 1, 8, 24)])
+    ehdr = struct.pack(
+        "<16sHHIQQQIHHHHHH",
+        b"\x7fELF" + bytes([2, 1, 1, 0]) + b"\x00" * 8,
+        3, 0xB7, 1, 0, 64, shoff, 0, 64, 56, 2, 64, shnum, 0)
+    return ehdr + body
 
+
+# what the sample library calls in libcrypto
+NATIVE_IMPORTS = ("MD5_Init", "MD5_Update", "DES_key_schedule", "strcpy")
 
 NATIVE_DATA = (
     b"\x00\x00\x80\x52" * 16 +                       # fake instructions
@@ -469,7 +488,7 @@ ASSETS_JSON = """{
 def build_apk(outdir):
     apk_path = os.path.join(outdir, "VulnerableBank.apk")
     manifest = build_android_manifest()
-    so = make_elf64(NATIVE_DATA)
+    so = make_elf64(NATIVE_DATA, imports=NATIVE_IMPORTS)
     dex = make_dex(DEX_STRINGS)
     with zipfile.ZipFile(apk_path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("AndroidManifest.xml", manifest)
@@ -521,7 +540,7 @@ def build_android_tree(outdir):
               "w", encoding="utf-8") as fh:
         fh.write(MAIN_JAVA)
     with open(os.path.join(tree, "lib/arm64-v8a/libvulnbank.so"), "wb") as fh:
-        fh.write(make_elf64(NATIVE_DATA))
+        fh.write(make_elf64(NATIVE_DATA, imports=NATIVE_IMPORTS))
     return tree
 
 

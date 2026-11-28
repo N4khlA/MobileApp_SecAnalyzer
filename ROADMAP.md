@@ -49,8 +49,8 @@ The goal of v1.4 is a precision/recall table that no one can argue with.
       OWASP UnCrackable apps; DIVA, AndroGoat, OVAA and DVIA-v2 had no
       reachable download. Ground truth is a draft from published lists.*
 - [~] **Clean corpus**: 50 to 100 popular open-source apps from F-Droid. Use it to
-      measure the false-positive rate per rule. *7 apps so far, every
-      finding labelled (`bench/LABELLING.md`).*
+      measure the false-positive rate per rule. *27 apps so far, every
+      verifiable finding labelled (`bench/LABELLING.md`).*
 - [x] Add a `bench/run.py` script that writes per-rule TP/FP/FN, then a
       `BENCHMARK.md` table and a CI job that fails when precision regresses.
       *Done: `.github/workflows/bench.yml` runs `--check` on every change.*

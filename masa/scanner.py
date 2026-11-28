@@ -48,12 +48,19 @@ _PUBLIC_DATA = {"public_suffix_list.dat", "effective_tld_names.dat",
                 # generated credits list (AboutLibraries): names, links, licenses
                 "aboutlibraries.json"}
 _DOC_NAMES = {"README", "CHANGES", "CHANGELOG", "LICENSE", "LICENCE", "NOTICE",
-              "COPYING", "AUTHORS"}
+              "COPYING", "AUTHORS", "DEPENDENCIES"}
+# AboutLibraries credits JSON, whatever resource shrinking renamed it to
+_CREDITS = re.compile(r'"uniqueId"\s*:.*?"(?:artifactVersion|licenses|developers)"', re.S)
+# a license text is documentation, whatever its file name
+_LICENSE_TEXT = re.compile(
+    r"GNU (?:LESSER |AFFERO )?GENERAL PUBLIC LICENSE|Apache License,?\s+Version|"
+    r"Mozilla Public License|Eclipse Public License|MIT License|"
+    r"Redistribution and use in source and binary forms")
 # URL rules skip comment-only lines: a link in a comment is documentation
 _URL_RULES = {"NET-001", "NET-010"}
 
-# shortcut: known crypto libraries by file name, not by their symbol table;
-# parse ELF dynsym (defined vs imported) if renamed libraries show up
+# shortcut: known crypto libraries by file name, for the weak-crypto *string*
+# rules (CRY-*); NAT-002 already uses ELF imports (native.elf_imports)
 _CRYPTO_LIBS = ("libconscrypt", "libcrypto", "libssl", "libboringssl",
                 "libsqlcipher", "libwolfssl", "libmbedcrypto", "libmbedtls")
 
@@ -103,10 +110,13 @@ class Scanner:
 
     def scan_text(self, content: str, filename: str, findings: List[Finding]) -> List[Finding]:
         """content: str, filename: display path. Appends Findings."""
-        if filename.replace("\\", "/").rsplit("/", 1)[-1].lower() in _PUBLIC_DATA:
+        if filename.replace("\\", "/").rsplit("/", 1)[-1].lower() in _PUBLIC_DATA \
+                or _CREDITS.search(content[:2000]):
             return findings
         lines = content.split("\n")
         kind = file_kind(filename)
+        if kind != "doc" and _LICENSE_TEXT.search(content[:600]):
+            kind = "doc"
         has_ignore = "masa-ignore" in content
         for rid, cr in self.compiled.items():
             if not cr.re or not cr.applies_to(kind):

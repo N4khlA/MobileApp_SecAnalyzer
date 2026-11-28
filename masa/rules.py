@@ -51,7 +51,10 @@ SECRETS = [
          "Store secrets on a backend and exchange them for short-lived "
          "session tokens; protect tokens at rest with the Keystore/Keychain."),
     Rule("SEC-007", "Embedded Private Key Material", "critical", "M1", "secrets",
-         r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----",
+         # header plus a base64 body (optional Proc-Type/DEK-Info lines):
+         # the bare header is a constant in every PEM parser (sshj, BC)
+         r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----"
+         r"(?:\s*[A-Za-z-]+:[^\n]*)*\s*[A-Za-z0-9+/=]{40,}",
          "Private key material (RSA/EC/OpenSSH) is embedded in the app or "
          "its resources. Anyone can decrypt data protected by the matching "
          "public key, or impersonate the signer.",
@@ -264,6 +267,7 @@ NETWORK = [
          r"(?:www\.)?apple\.com/DTDs|xml\.org|(?:www\.)?schema\.org|purl\.org|"
          r"xmlpull\.org|microformats\.org|javax\.xml\.|dashif\.org|"
          r"search\.yahoo\.com/mrss|podlove\.org|[a-z0-9.-]+/ns/|"
+         r"jabber\.org/(?:protocol|features)|"
          r"apache\.org/xml/features|(?:www\.)?example\.(?:com|org|net)\b|"
          r"(?:www\.)?eclipse\.org/legal|"
          r"(?:www\.)?(?:apache|gnu|opensource)\.org/licenses|mozilla\.org/MPL)"
@@ -316,7 +320,7 @@ NETWORK = [
     Rule("NET-006", "Certificate Pinning Disabled in Code", "high", "M5",
          "network",
          r"(?i)(?:disableCertPinning|pinningEnabled\s*=\s*false|"
-         r"sslPinning\s*=\s*false|\ballowInsecure\b|unpinning|"
+         r"sslPinning\s*=\s*false|unpinning|"
          r"NSURLSession\s*\(configuration:\s*\.ephemeral\)[^;]*http)",
          "Certificate pinning is explicitly switched off, removing "
          "protection against MITM via compromised CAs.",
@@ -778,10 +782,9 @@ NATIVE = [
          "types."),
     Rule("NAT-002", "Weak Cryptographic Primitive in Native Code", "high",
          "M10", "native",
-         # letters/digits only as boundaries, so OpenSSL-style symbols
-         # (MD5_Init, DES_key_schedule, RC4_set_key) match too
-         r"(?i)(?<![A-Za-z0-9])(?:MD5|DES|RC4|SHA-?1|3DES)(?![A-Za-z0-9])",
-         "A weak cryptographic primitive is present in native code.",
+         None,  # programmatic: ELF imports of weak primitives (native.py)
+         "A native library imports a weak primitive (MD5, SHA-1, DES, RC4) "
+         "from a crypto library, so its code calls it.",
          "Replace with SHA-256/AES-256-GCM/ChaCha20 implementations."),
     Rule("NAT-003", "Command Execution in Native Code", "medium", "M7",
          "native",

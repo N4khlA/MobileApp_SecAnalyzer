@@ -8,10 +8,36 @@ semantic versioning.
 
 ### Added
 
+- Benchmark corpus grown from 12 to 32 apps (20 more F-Droid apps: crypto,
+  VPN, XMPP, sync, file managers, a Flutter app). Precision on 1,067
+  labelled findings is 79% (88% on the first 12); recall unchanged at 57%.
+
 - CI job `bench` runs `bench/run.py --check` on changes to `masa/` or
   `bench/` and fails when a rule's precision or recall drops. Apps are
   cached by `corpus.json` hash; F-Droid downloads fall back to
   `/archive/` once a version leaves `/repo/` (the sha256 pin still holds).
+
+### Changed
+
+- NAT-002 (weak crypto in native code) now fires on ELF **imports**
+  (undefined `.dynsym` entries such as `MD5_Init`, `EVP_sha1`): code that
+  calls a weak primitive. Libraries that embed BoringSSL/OpenSSL (Flutter,
+  Cronet, WebRTC, libarchive) export those names and carry cipher-name
+  tables; that was 512 false positives on the grown corpus, now 0.
+- SEC-007 (private key) needs a base64 body after the PEM header; the bare
+  header is a constant in every PEM parser (sshj, BouncyCastle).
+- NET-006 no longer matches `allowInsecure`, which never once meant pinning
+  (a settings label in a Flutter app's translations).
+- AboutLibraries credits lists and license texts are recognised by content,
+  so resource shrinking (`res/M7.json`, `res/XB`) no longer hides them;
+  `DEPENDENCIES` counts as a doc file; NET-001 skips XMPP namespaces.
+
+### Fixed
+
+- Manifest, binary-structure and behaviour findings (CFG-*, PERM-*, BIN-*,
+  NAT-006..010, ...) carried no CWE or MASVS id in JSON, Markdown and HTML:
+  they were built from rule copies made before the ids were attached. SARIF
+  was not affected.
 
 ## [1.4.0] - 2026-11-28
 

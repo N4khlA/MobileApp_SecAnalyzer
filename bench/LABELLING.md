@@ -33,6 +33,24 @@ small to know whether any function needed a canary), PERM-002 for
 InsecureBankv2's contacts and storage read (use not verifiable without
 decompiling), BIN-002 on the UnCrackable iOS app.
 
+Second pass (2026-11-29, 20 more F-Droid apps), same criteria, plus:
+
+| Rule | tp when | fp when |
+|---|---|---|
+| NET-001 | OCSP/CRL/AIA certificate URLs, WPAD, `.onion` mirrors over Tor, image-host templates | XML/XMPP namespaces, WebRTC `rtp-hdrext` IDs, slf4j/logback doc links, homepages, Brotli dictionary fragments |
+| NET-010 | backends, store APIs read from Dart code (`libapp.so`), OAuth token endpoints | OAuth scope IDs, XSD/schema namespaces, Flutter API docs |
+| PRI-001 | exact `getDeviceId`/`getImei`/`getSubscriberId…` in an app with `READ_PHONE_STATE` | substring hits: `sGetDeviceIdMethod`, `…WidgetDeviceIdPref`, `getDeviceIdleController`, a server's `getMacAddress` |
+| BIN-003 | no root detection | Amaze and Material Files, which detect root to offer root features |
+| NAT-009 | — | Obtainium's `libapp.so`: a Dart snapshot, not C code |
+| SCP-002 | `AndroidHttpClient` referenced | Aurora's own `…gplayapi.network.DefaultHttpClient`, a jar path string |
+| SCP-003 | — | bare `PathClassLoader`/`BaseDexClassLoader` type references |
+| CRY-002, CRY-003 | App Manager's "MD5 (unreliable)" checksum | Guava's `Hashing.md5()`/`Hashing.sha1()` messages |
+| NET-004 | KDE Connect's `trustAllCerts` (self-signed device certs by design) | — |
+
+Unlabelled: STO-003 for DAVx⁵ and Gotify (whether they store data externally
+is not visible), NAT-009 on Amaze's small `librootoperations.so`, PERM-002 for
+ConnectBot.
+
 Corrections after the first pass: UnCrackable L3's BIN-002 is tp (its Java
 classes are not renamed; its protection is native), and the exact `RC4`/`rc4`
 strings are tp, as the CRY criterion says.
