@@ -208,6 +208,25 @@ scan is not proof that an app is secure.
 
 ---
 
+## Benchmark
+
+masa is measured on 12 real apps: InsecureBankv2, the four OWASP UnCrackable
+apps and seven F-Droid apps, scanned without a decompiler as in CI. Every
+finding is labelled against written criteria
+([bench/LABELLING.md](bench/LABELLING.md)):
+
+| | |
+|---|---|
+| Precision (findings that are true) | **88%** (357/405) |
+| Recall (known weaknesses found) | **57%** (8/14) |
+
+Per-rule numbers are in [bench/BENCHMARK.md](bench/BENCHMARK.md). The misses
+are code-level weaknesses (credentials in logs, a hardcoded IV) that dex
+strings alone cannot show. To reproduce, run `python bench/run.py`; it
+downloads the pinned apps (about 120 MB) and rescores them.
+
+---
+
 ## OWASP Mobile Top 10 (2023) Coverage
 
 | OWASP Category | Name | Detection Scope |

@@ -1,13 +1,14 @@
 # masa roadmap
 
-Where masa is today (v1.3.0, on PyPI as `masa-scan`): 100 regex rules plus
+Where masa is today (v1.4.0, on PyPI as `masa-scan`): 100 regex rules plus
 programmatic manifest, plist and binary checks, each tagged with CWE and MASVS
 ids. It is zero-dependency, reports in SARIF, JSON, Markdown and HTML, has a
 coverage-honest "incomplete scan" signal, supports suppressions and baselines,
-ships as a GitHub Action and passes 130 tests.
+ships as a GitHub Action and passes 146 tests. On a labelled benchmark of
+12 real apps its findings are 88% precise, with 57% recall of known weaknesses.
 
-What holds it back: rules are hardcoded in Python, nobody has measured precision
-or recall on real apps, and apps built with Flutter, React Native or Xamarin go
+What holds it back: rules are hardcoded in Python, string-only scanning cannot
+see code context (the recall ceiling), and apps built with Flutter, React Native or Xamarin go
 almost unanalysed.
 
 The direction is to become **the lightweight, CI-native MobSF alternative**: one
@@ -37,24 +38,29 @@ The goal of v1.3 is that a team can adopt masa without it nagging them forever.
       taken) and `uses: N4khlA/MobileApp_SecAnalyzer@v1.3.0`, from this repo's
       `action.yml`. Releases publish through PyPI trusted publishing on a tag.
 
-## v1.4: prove it works (≈3 weeks). This is the research hook.
+## v1.4: prove it works (1.4.0 released 2026-11-28; partly done)
 
 The goal of v1.4 is a precision/recall table that no one can argue with.
 
-- [ ] **Benchmark corpus** in `bench/`, using known-vulnerable apps with published
+- [~] **Benchmark corpus** in `bench/`, using known-vulnerable apps with published
       ground truth: OWASP MASTG test apps, DIVA, InsecureBankv2, AndroGoat,
       OVAA, and DVIA-v2 for iOS. Pin each by SHA-256 and fetch them with a
-      script; don't commit the APKs.
-- [ ] **Clean corpus**: 50 to 100 popular open-source apps from F-Droid. Use it to
-      measure the false-positive rate per rule.
-- [ ] Add a `bench/run.py` script that writes per-rule TP/FP/FN, then a
+      script; don't commit the APKs. *Done for InsecureBankv2 and the four
+      OWASP UnCrackable apps; DIVA, AndroGoat, OVAA and DVIA-v2 had no
+      reachable download. Ground truth is a draft from published lists.*
+- [~] **Clean corpus**: 50 to 100 popular open-source apps from F-Droid. Use it to
+      measure the false-positive rate per rule. *7 apps so far, every
+      finding labelled (`bench/LABELLING.md`).*
+- [~] Add a `bench/run.py` script that writes per-rule TP/FP/FN, then a
       `BENCHMARK.md` table and a CI job that fails when precision regresses.
+      *Script, table and `--check` done; the CI job is not wired up yet.*
 - [ ] **Head-to-head comparison** with MobSF and semgrep's mobile rules on the same
       corpus, covering precision, recall, scan time and install size. This is
       the README headline and a paper section.
-- [ ] Demote or delete any rule below roughly 50% precision on the clean corpus,
+- [x] Demote or delete any rule below roughly 50% precision on the clean corpus,
       and log it in the CHANGELOG the way the existing "confesses everything"
-      entries do.
+      entries do. *Nine rules fixed (66% -> 88% overall); NET-001 demoted
+      to medium at 33%.*
 
 ## v2.0: past regex (≈1–2 months)
 

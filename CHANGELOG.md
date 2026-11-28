@@ -6,6 +6,11 @@ semantic versioning.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-28
+
+Rules tuned against a labelled benchmark of 12 real apps: precision 88%,
+recall 57% (`bench/BENCHMARK.md`).
+
 ### Added
 
 - `bench/`: a benchmark on real apps. `python bench/run.py` downloads a
