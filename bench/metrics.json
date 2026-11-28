@@ -1,45 +1,45 @@
 {
   "BIN-002": {
-    "fp": 0,
+    "fp": 3,
     "hit": 1,
     "miss": 0,
     "tp": 1,
-    "unlabelled": 4
+    "unlabelled": 1
   },
   "BIN-003": {
-    "fp": 0,
+    "fp": 3,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 10
+    "tp": 7,
+    "unlabelled": 0
   },
   "BIN-004": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "BIN-005": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 2
+    "tp": 2,
+    "unlabelled": 0
   },
   "CFG-001": {
     "fp": 0,
     "hit": 1,
     "miss": 0,
-    "tp": 6,
-    "unlabelled": 75
+    "tp": 81,
+    "unlabelled": 0
   },
   "CFG-002": {
     "fp": 0,
     "hit": 1,
     "miss": 0,
-    "tp": 1,
-    "unlabelled": 9
+    "tp": 10,
+    "unlabelled": 0
   },
   "CFG-004": {
     "fp": 0,
@@ -49,53 +49,53 @@
     "unlabelled": 0
   },
   "CFG-005": {
-    "fp": 0,
+    "fp": 8,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 12
+    "tp": 4,
+    "unlabelled": 0
   },
   "CFG-006": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 2
+    "tp": 2,
+    "unlabelled": 0
   },
   "CFG-007": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 6
+    "tp": 6,
+    "unlabelled": 0
   },
   "CRY-001": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 7
+    "tp": 7,
+    "unlabelled": 0
   },
   "CRY-003": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "CRY-004": {
-    "fp": 0,
+    "fp": 11,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 11
+    "unlabelled": 0
   },
   "CRY-005": {
-    "fp": 0,
+    "fp": 1,
     "hit": 1,
     "miss": 0,
-    "tp": 1,
-    "unlabelled": 5
+    "tp": 5,
+    "unlabelled": 0
   },
   "CRY-006": {
     "fp": 0,
@@ -112,25 +112,25 @@
     "unlabelled": 0
   },
   "CRY-011": {
-    "fp": 0,
+    "fp": 2,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 7
+    "tp": 5,
+    "unlabelled": 0
   },
   "INP-002": {
-    "fp": 0,
+    "fp": 3,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 3
+    "unlabelled": 0
   },
   "IPC-004": {
-    "fp": 0,
+    "fp": 7,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 7
+    "unlabelled": 0
   },
   "LOG-001": {
     "fp": 0,
@@ -143,43 +143,43 @@
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 10
+    "tp": 4,
+    "unlabelled": 6
   },
   "NET-001": {
-    "fp": 0,
+    "fp": 104,
     "hit": 1,
     "miss": 0,
-    "tp": 16,
-    "unlabelled": 106
+    "tp": 18,
+    "unlabelled": 0
   },
   "NET-002": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 2
+    "tp": 2,
+    "unlabelled": 0
   },
   "NET-006": {
-    "fp": 0,
+    "fp": 1,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 1
+    "unlabelled": 0
   },
   "NET-008": {
-    "fp": 0,
+    "fp": 2,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 2
+    "unlabelled": 0
   },
   "NET-010": {
-    "fp": 0,
+    "fp": 26,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 172
+    "tp": 146,
+    "unlabelled": 0
   },
   "NET-018": {
     "fp": 0,
@@ -192,43 +192,43 @@
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 16
+    "tp": 16,
+    "unlabelled": 0
   },
   "PERM-002": {
-    "fp": 0,
+    "fp": 2,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 4
+    "unlabelled": 2
   },
   "PERM-003": {
-    "fp": 0,
+    "fp": 1,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 4
+    "tp": 3,
+    "unlabelled": 0
   },
   "PERM-004": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "PRI-001": {
-    "fp": 0,
+    "fp": 12,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 13
+    "tp": 1,
+    "unlabelled": 0
   },
   "PRI-002": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "PRI-005": {
     "fp": 0,
@@ -241,36 +241,36 @@
     "fp": 0,
     "hit": 1,
     "miss": 0,
-    "tp": 1,
-    "unlabelled": 3
+    "tp": 4,
+    "unlabelled": 0
   },
   "SCP-002": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 2
+    "tp": 2,
+    "unlabelled": 0
   },
   "SCP-003": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "SCP-004": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "SEC-002": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
-    "unlabelled": 1
+    "tp": 1,
+    "unlabelled": 0
   },
   "STO-001": {
     "fp": 0,
@@ -280,17 +280,17 @@
     "unlabelled": 0
   },
   "STO-003": {
-    "fp": 0,
+    "fp": 3,
     "hit": 1,
     "miss": 0,
-    "tp": 3,
-    "unlabelled": 28
+    "tp": 28,
+    "unlabelled": 0
   },
   "STO-004": {
     "fp": 0,
     "hit": 0,
     "miss": 1,
-    "tp": 0,
-    "unlabelled": 2
+    "tp": 2,
+    "unlabelled": 0
   }
 }

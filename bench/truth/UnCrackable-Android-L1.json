@@ -3,5 +3,11 @@
   "expected": {
     "CRY-005": "decrypts its secret with AES in ECB mode"
   },
-  "labels": {}
+  "labels": {
+    "70f9e099b32b": "fp",
+    "9c3eed86cbeb": "tp",
+    "a53f9ae97d5c": "fp",
+    "d40e7f836e37": "tp"
+  },
+  "_labels": "Labels: first pass by Claude, one criterion per rule (tp = the rule's claim is true for this evidence); review before relying on them."
 }
