@@ -1,0 +1,19 @@
+{
+  "_note": "Draft from the app's published vulnerability list; confirm each entry against the decompiled app.",
+  "expected": {
+    "CFG-001": "PostLogin, DoTransfer, ViewStatement, a content provider and a broadcast receiver are exported",
+    "CFG-002": "android:allowBackup=\"true\"",
+    "CFG-004": "android:debuggable=\"true\"",
+    "LOG-001": "logs the username and password on login",
+    "STO-001": "stores the (reversibly encrypted) credentials in SharedPreferences",
+    "STO-003": "writes statements to external storage",
+    "STO-004": "keeps user data in a plaintext SQLite database",
+    "NET-001": "talks to its backend over cleartext http",
+    "NET-018": "ViewStatement WebView enables JavaScript",
+    "CRY-006": "AES-CBC with a hardcoded all-zero IV",
+    "CRY-008": "AES key built from a hardcoded string",
+    "BIN-002": "shipped without obfuscation",
+    "SCP-001": "targets an old Android SDK"
+  },
+  "labels": {}
+}

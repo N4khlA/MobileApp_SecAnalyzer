@@ -1,0 +1,74 @@
+[
+  {
+    "name": "InsecureBankv2",
+    "kind": "vulnerable",
+    "url": "https://raw.githubusercontent.com/dineshshetty/Android-InsecureBankv2/master/InsecureBankv2.apk",
+    "sha256": ""
+  },
+  {
+    "name": "UnCrackable-Android-L1",
+    "kind": "vulnerable",
+    "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/Android/Level_01/UnCrackable-Level1.apk",
+    "sha256": ""
+  },
+  {
+    "name": "UnCrackable-Android-L2",
+    "kind": "hardened",
+    "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/Android/Level_02/UnCrackable-Level2.apk",
+    "sha256": ""
+  },
+  {
+    "name": "UnCrackable-Android-L3",
+    "kind": "hardened",
+    "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/Android/Level_03/UnCrackable-Level3.apk",
+    "sha256": ""
+  },
+  {
+    "name": "UnCrackable-iOS-L1",
+    "kind": "hardened",
+    "url": "https://raw.githubusercontent.com/OWASP/mastg/master/Crackmes/iOS/Level_01/UnCrackable-Level1.ipa",
+    "sha256": ""
+  },
+  {
+    "name": "de.danoeh.antennapod",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/de.danoeh.antennapod_3130095.apk",
+    "sha256": ""
+  },
+  {
+    "name": "org.schabi.newpipe",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.schabi.newpipe_1017.apk",
+    "sha256": ""
+  },
+  {
+    "name": "org.tasks",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.tasks_151410.apk",
+    "sha256": ""
+  },
+  {
+    "name": "eu.faircode.email",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/eu.faircode.email_2341.apk",
+    "sha256": ""
+  },
+  {
+    "name": "com.fsck.k9",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.fsck.k9_39047.apk",
+    "sha256": ""
+  },
+  {
+    "name": "org.fossify.notes",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/org.fossify.notes_13.apk",
+    "sha256": ""
+  },
+  {
+    "name": "com.github.libretube",
+    "kind": "clean",
+    "url": "https://f-droid.org/repo/com.github.libretube_72.apk",
+    "sha256": ""
+  }
+]

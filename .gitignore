@@ -49,3 +49,7 @@ ENV/
 *.swp
 *.swo
 .DS_Store
+
+# Benchmark downloads and per-app results (bench/run.py)
+bench/apps/
+bench/results/

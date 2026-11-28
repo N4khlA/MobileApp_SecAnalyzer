@@ -1,0 +1,7 @@
+{
+  "_note": "Draft from the app's published vulnerability list; confirm each entry against the decompiled app.",
+  "expected": {
+    "CRY-005": "decrypts its secret with AES in ECB mode"
+  },
+  "labels": {}
+}
