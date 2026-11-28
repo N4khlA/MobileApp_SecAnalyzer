@@ -74,21 +74,21 @@
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 493
+    "unlabelled": 7
   },
   "CRY-003": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 8
+    "unlabelled": 1
   },
   "CRY-004": {
     "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 34
+    "unlabelled": 11
   },
   "CRY-005": {
     "fp": 0,
@@ -138,13 +138,6 @@
     "miss": 1,
     "tp": 0,
     "unlabelled": 0
-  },
-  "NAT-002": {
-    "fp": 0,
-    "hit": 0,
-    "miss": 0,
-    "tp": 0,
-    "unlabelled": 477
   },
   "NAT-009": {
     "fp": 0,

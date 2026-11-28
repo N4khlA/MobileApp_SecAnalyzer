@@ -27,6 +27,19 @@ semantic versioning.
   Public Suffix List (`public_suffix_list.dat`, `effective_tld_names.dat`)
   is no longer text-scanned: its comments name every domain registry's
   website. On the benchmark NET-001 went from 1,773 hits to 122.
+- CRY-001 (DES/3DES) matches the transformation code asks for: `"DES"`,
+  `"DESede"`, `"DES/CBC/PKCS5Padding"` and the like, quoted in source or as
+  a whole dex string, plus `kCCAlgorithmDES`/`kCCAlgorithm3DES`. It no
+  longer fires on TLS cipher-suite tables, OpenSSL and BouncyCastle
+  algorithm catalogs, SQLite's `fts3DestroyMethod` (a case-insensitive
+  `3DES` match), or bare `CCCrypt`, which CommonCrypto also uses for AES.
+  Known gap: an app that explicitly enables a `3DES_EDE` TLS suite is no
+  longer reported. On the benchmark CRY-001 went from 493 hits to 7.
+- Weak-crypto rules (OWASP M10, e.g. NAT-002, CRY-004) skip bundled crypto
+  libraries (`libconscrypt*`, `libcrypto*`, `libssl*`, `libsqlcipher*`, …):
+  a TLS library exports `EVP_des_cbc` because it implements DES, not because
+  the app uses it. Secret, endpoint and hardening checks still run on them.
+  NAT-002 went from 477 hits to 0, all of them in Conscrypt.
 
 ## [1.3.1] - 2026-11-28
 

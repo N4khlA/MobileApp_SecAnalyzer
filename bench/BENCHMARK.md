@@ -6,24 +6,24 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 |---|---|
 | Recall (expected weaknesses found) | 57% (8/14) |
 | Precision (labelled findings) | 100% (30/30) |
-| Findings not labelled yet | 2222 |
+| Findings not labelled yet | 1229 |
 
 ## Apps
 
 | App | Kind | Findings | Coverage | Seconds |
 |---|---|---:|---|---:|
-| InsecureBankv2 | vulnerable | 84 | complete | 3.5 |
+| InsecureBankv2 | vulnerable | 84 | complete | 3.0 |
 | UnCrackable-Android-L1 | vulnerable | 6 | complete | 0.0 |
-| UnCrackable-Android-L2 | hardened | 6 | complete | 0.7 |
-| UnCrackable-Android-L3 | hardened | 16 | complete | 1.5 |
-| UnCrackable-iOS-L1 | hardened | 4 | complete | 0.1 |
-| de.danoeh.antennapod | clean | 822 | complete | 8.5 |
-| org.schabi.newpipe | clean | 362 | complete | 12.6 |
-| org.tasks | clean | 193 | complete | 24.9 |
-| eu.faircode.email | clean | 423 | complete | 23.8 |
-| com.fsck.k9 | clean | 92 | complete | 8.5 |
-| org.fossify.notes | clean | 52 | complete | 3.0 |
-| com.github.libretube | clean | 192 | complete | 6.0 |
+| UnCrackable-Android-L2 | hardened | 6 | complete | 0.6 |
+| UnCrackable-Android-L3 | hardened | 16 | complete | 1.2 |
+| UnCrackable-iOS-L1 | hardened | 4 | complete | 0.0 |
+| de.danoeh.antennapod | clean | 94 | complete | 6.8 |
+| org.schabi.newpipe | clean | 345 | complete | 9.6 |
+| org.tasks | clean | 176 | complete | 24.3 |
+| eu.faircode.email | clean | 218 | complete | 24.4 |
+| com.fsck.k9 | clean | 79 | complete | 7.9 |
+| org.fossify.notes | clean | 52 | complete | 2.8 |
+| com.github.libretube | clean | 179 | complete | 6.5 |
 
 ## Rules
 
@@ -39,9 +39,9 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 | CFG-005 | Staging/Test Endpoint in Production Build | - | - | 268 |
 | CFG-006 | Content Provider Partially Protected | - | - | 2 |
 | CFG-007 | Component Guarded by Weak Custom Permission | - | - | 6 |
-| CRY-001 | Deprecated DES / 3DES Cipher | - | - | 493 |
-| CRY-003 | SHA-1 Hash Function | - | - | 8 |
-| CRY-004 | RC4 Stream Cipher | - | - | 34 |
+| CRY-001 | Deprecated DES / 3DES Cipher | - | - | 7 |
+| CRY-003 | SHA-1 Hash Function | - | - | 1 |
+| CRY-004 | RC4 Stream Cipher | - | - | 11 |
 | CRY-005 | ECB Encryption Mode | 100% (1/1) | 100% (1/1) | 5 |
 | CRY-006 | Hardcoded Initialization Vector | 0% (0/1) | - | 0 |
 | CRY-008 | Raw Password Used as Crypto Key | 0% (0/1) | - | 0 |
@@ -49,7 +49,6 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 | INP-002 | Path Traversal via File Construction | - | - | 3 |
 | IPC-004 | Caller Permission Check Falls Back to Self | - | - | 7 |
 | LOG-001 | Sensitive Data Written to Logs | 0% (0/1) | - | 0 |
-| NAT-002 | Weak Cryptographic Primitive in Native Code | - | - | 477 |
 | NAT-009 | No Stack Canary in Native Binary | - | - | 10 |
 | NET-001 | Cleartext HTTP URL | 100% (1/1) | 100% (16/16) | 106 |
 | NET-002 | Cleartext Traffic Enabled in Manifest | - | - | 2 |

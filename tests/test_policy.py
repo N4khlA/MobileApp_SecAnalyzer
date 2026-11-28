@@ -93,6 +93,42 @@ class TestFileScoping(unittest.TestCase):
                                                 findings)
                 self.assertIn("NAT-002", ids(findings))
 
+    def test_crypto_libraries_are_not_judged_on_what_they_implement(self):
+        def native_ids(strings, name):
+            findings = []
+            Scanner(ALL_RULES).scan_strings(strings, name, findings)
+            return ids(findings)
+        weak = ["EVP_des_cbc", "DES_set_key", "EVP_md5"]
+        self.assertIn("NAT-002", native_ids(weak, "lib/arm64-v8a/libapp.so"))
+        for lib in ("libconscrypt_jni.so", "libcrypto.so", "libssl.so.3"):
+            with self.subTest(lib):
+                found = native_ids(weak + ["AKIAIOSFODNN7EXAMPLE"],
+                                   "lib/arm64-v8a/" + lib)
+                self.assertNotIn("NAT-002", found)
+                self.assertIn("SEC-001", found)   # other rules still run
+
+    def test_des_rule_wants_a_transformation_not_a_catalog(self):
+        def dex_ids(s):
+            findings = []
+            Scanner(ALL_RULES).scan_strings([s], "classes.dex", findings)
+            return ids(findings)
+        for s in ("DES", "DESede", "DES/CBC/PKCS5Padding", "DESede/ECB/NoPadding"):
+            with self.subTest(s):
+                self.assertIn("CRY-001", dex_ids(s))
+        self.assertIn("CRY-001", ids(scan(
+            'KeyGenerator.getInstance("DESede");', "K.java")))
+        self.assertIn("CRY-001", ids(scan(
+            "CCCrypt(kCCEncrypt, kCCAlgorithmDES, 0, k, 8, NULL, d, n, o, m, &l);",
+            "C.m")))
+        # library catalogs found on real apps by bench/run.py
+        for s in ("TLS_RSA_WITH_3DES_EDE_CBC_SHA", "fts3DestroyMethod",
+                  "des-ede3-cbc", "DES-EDE3-CBC",
+                  "Lorg/bouncycastle/jcajce/provider/symmetric/DESede",
+                  "IESCipher$ECIESwithDESedeCBC", "DESede engine not initialised",
+                  "CCCrypt"):
+            with self.subTest(s):
+                self.assertNotIn("CRY-001", dex_ids(s))
+
     def test_code_rules_skip_docs(self):
         text = 'Cipher.getInstance("DES/ECB/PKCS5Padding")'
         self.assertIn("CRY-001", ids(scan(text, "Crypto.java")))

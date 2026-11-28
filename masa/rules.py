@@ -91,8 +91,11 @@ SECRETS = [
 
 CRYPTO = [
     Rule("CRY-001", "Deprecated DES / 3DES Cipher", "high", "M10", "crypto",
-         r"(?i)(?:DESede|DES/ECB|DES/CBC|3DES|kCCAlgorithmDES|kCCAlgorithm3DES|"
-         r"CCCrypt(?![A-Za-z0-9_])|\bDES\b)",
+         # the exact transformation code passes to Cipher.getInstance, quoted
+         # in source or as a whole dex string; plus CommonCrypto's constants.
+         # Library catalogs (TLS suite names, BouncyCastle aliases) stay out.
+         r"[\"']DES(?:ede)?(?:/[A-Za-z0-9]+/[A-Za-z0-9]+)?[\"']|"
+         r"^DES(?:ede)?(?:/[A-Za-z0-9]+/[A-Za-z0-9]+)?$|kCCAlgorithm3?DES\b",
          "DES and 3DES are legacy ciphers with a 56/112-bit effective key "
          "size, broken by modern brute-force and meet-in-the-middle attacks.",
          "Use AES-256 with a GCM/ChaCha20 authenticated mode."),

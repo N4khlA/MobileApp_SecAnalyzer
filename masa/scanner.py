@@ -44,6 +44,11 @@ _IGNORE = re.compile(
 # metadata whose comments name every registry's (http) website
 _PUBLIC_DATA = {"public_suffix_list.dat", "effective_tld_names.dat"}
 
+# shortcut: known crypto libraries by file name, not by their symbol table;
+# parse ELF dynsym (defined vs imported) if renamed libraries show up
+_CRYPTO_LIBS = ("libconscrypt", "libcrypto", "libssl", "libboringssl",
+                "libsqlcipher", "libwolfssl", "libmbedcrypto", "libmbedtls")
+
 _COMMENT_STARTS = ("//", "#", "/*", "*", "<!--", ";", "--")
 
 
@@ -128,8 +133,12 @@ class Scanner:
                      offset_base: int = 0) -> List[Finding]:
         """Scan a list of extracted strings; findings are binary evidence."""
         kind = "dex" if filename.lower().endswith(".dex") else "native"
+        # a crypto library is not judged on the primitives it implements
+        crypto_lib = filename.replace("\\", "/").rsplit("/", 1)[-1].startswith(
+            _CRYPTO_LIBS)
         active = [cr for cr in self.compiled.values()
-                  if cr.re and cr.applies_to(kind)]
+                  if cr.re and cr.applies_to(kind)
+                  and not (crypto_lib and cr.rule.owasp == "M10")]
         for i, s in enumerate(strings):
             for cr in active:
                 m = cr.re.search(s)
