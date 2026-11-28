@@ -76,6 +76,10 @@ semantic versioning.
     generated `aboutlibraries.json` credits list. Its remaining false
     positives are library homepage strings that a string cannot tell apart
     from a real URL.
+- NET-001 is now **medium** (was high). At 33% precision on the benchmark, an
+  `http://` string alone cannot show the app fetches it, so it should not
+  fail a `--fail-on high` build by itself. Cleartext enabled in the manifest
+  or network security config (NET-002, NET-003) stays high.
 
 ## [1.3.1] - 2026-11-28
 

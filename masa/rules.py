@@ -251,7 +251,10 @@ STORAGE = [
 # OWASP M5 - Insecure Communication
 
 NETWORK = [
-    Rule("NET-001", "Cleartext HTTP URL", "high", "M5", "network",
+    # medium, not high: 33% precision on the benchmark; an http:// string
+    # cannot show the app fetches it (library homepages look the same).
+    # Manifest-level cleartext (NET-002/003) stays high.
+    Rule("NET-001", "Cleartext HTTP URL", "medium", "M5", "network",
          r"(?<![Ss]ee )(?<!Check )"  # doc pointers inside messages
          r"\bhttp://(?![^\s'\"<>]*\.dtd\b)"  # DTD identifiers
          r"(?!localhost|127\.0\.0\.1|10\.0\.2\.2|10\.0\.0\.2|"
