@@ -323,10 +323,17 @@ NETWORK = [
          "into logs, proxies and browser history.",
          "Send credentials in the Authorization header over TLS."),
     Rule("NET-010", "Hardcoded API Endpoint", "low", "M5", "network",
-         r"\bhttps?://(?!(?:schemas\.android\.com|www\.w3\.org|"
+         # only API-shaped URLs: an api host (api.x, api-v2.x, *apis.com) or
+         # an /api, /rest, /graphql, /rpc or /vN path segment. Plain links
+         # (docs, licenses, schemas, tz data) were 98% of hits on real apps.
+         r"(?i)\bhttps?://(?!(?:schemas\.android\.com|www\.w3\.org|"
          r"(?:www\.)?apple\.com/DTDs|xml\.org|ns\.adobe\.com|"
-         r"schemas\.microsoft\.com)[:/])"
-         r"[a-z0-9.-]+\.[a-z]{2,}[:/][^\s'\"<>]{3,}",
+         r"schemas\.microsoft\.com|xmlpull\.org)[:/])"
+         r"(?:[a-z0-9.-]*\bapis?[.-][a-z0-9.-]+\.[a-z]{2,}"
+         r"|[a-z0-9.-]*apis\.[a-z]{2,}"
+         r"|[a-z0-9.-]+\.[a-z]{2,}(?::\d+)?/(?:[^\s'\"<>]*/)?"
+         r"(?:api|rest|graphql|rpc|v\d+(?:\.\d+)?)(?=[/?#'\"\s]|$))"
+         r"[^\s'\"<>]*",
          "A backend endpoint is hardcoded. Hardcoded endpoints complicate "
          "environment management and may point to staging servers.",
          "Centralize endpoint configuration (e.g. build config, remote "

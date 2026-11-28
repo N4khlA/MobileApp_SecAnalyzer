@@ -140,6 +140,28 @@ class TestCodeRules(unittest.TestCase):
         self.assertIn("NET-010",
                       scan_ids('url = "https://api.example.com/v1/users"'))
 
+    def test_hardcoded_endpoint_needs_an_api_shape(self):
+        endpoints = ["https://api-v2.soundcloud.com/search",
+                     "https://www.googleapis.com/youtube/v3/videos",
+                     "https://bandcamp.com/api/mobile/22/band_details",
+                     "https://example.com/graphql",
+                     "http://backend.example.com:8080/rest/login"]
+        # the noise found on real apps by bench/run.py
+        links = ["https://www.apache.org/licenses/LICENSE-2.0",
+                 "https://github.com/AntennaPod/AntennaPod/issues/123",
+                 "https://www.iana.org/time-zones/repository/tz-link.html",
+                 "TZURL:https://www.tzurl.org/zoneinfo-global/America/Lima",
+                 "http://schemas.openxmlformats.org/drawingml/2006/main",
+                 "http://xmlpull.org/v1/doc/features.html#indent-output",
+                 "https://github.com/foo/api-docs",
+                 "https://developer.android.com/reference/android/app/Activity"]
+        for url in endpoints:
+            with self.subTest(url):
+                self.assertIn("NET-010", scan_ids('u = "%s";' % url))
+        for url in links:
+            with self.subTest(url):
+                self.assertNotIn("NET-010", scan_ids('u = "%s";' % url))
+
 
 # --------------------------------------------------------------- manifest
 

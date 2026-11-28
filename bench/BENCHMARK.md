@@ -6,24 +6,24 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 |---|---|
 | Recall (expected weaknesses found) | 57% (8/14) |
 | Precision (labelled findings) | 100% (46/46) |
-| Findings not labelled yet | 11675 |
+| Findings not labelled yet | 4123 |
 
 ## Apps
 
 | App | Kind | Findings | Coverage | Seconds |
 |---|---|---:|---|---:|
-| InsecureBankv2 | vulnerable | 130 | complete | 3.1 |
+| InsecureBankv2 | vulnerable | 100 | complete | 3.1 |
 | UnCrackable-Android-L1 | vulnerable | 6 | complete | 0.0 |
-| UnCrackable-Android-L2 | hardened | 10 | complete | 0.6 |
-| UnCrackable-Android-L3 | hardened | 20 | complete | 1.2 |
+| UnCrackable-Android-L2 | hardened | 6 | complete | 0.6 |
+| UnCrackable-Android-L3 | hardened | 16 | complete | 1.2 |
 | UnCrackable-iOS-L1 | hardened | 4 | complete | 0.0 |
-| de.danoeh.antennapod | clean | 908 | complete | 7.3 |
-| org.schabi.newpipe | clean | 710 | complete | 9.7 |
-| org.tasks | clean | 1830 | complete | 23.2 |
-| eu.faircode.email | clean | 5345 | complete | 25.0 |
-| com.fsck.k9 | clean | 1935 | complete | 8.7 |
-| org.fossify.notes | clean | 504 | complete | 3.0 |
-| com.github.libretube | clean | 319 | complete | 6.0 |
+| de.danoeh.antennapod | clean | 834 | complete | 7.4 |
+| org.schabi.newpipe | clean | 378 | complete | 9.5 |
+| org.tasks | clean | 356 | complete | 22.7 |
+| eu.faircode.email | clean | 1791 | complete | 23.6 |
+| com.fsck.k9 | clean | 408 | complete | 8.6 |
+| org.fossify.notes | clean | 70 | complete | 4.0 |
+| com.github.libretube | clean | 200 | complete | 7.3 |
 
 ## Rules
 
@@ -55,7 +55,7 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 | NET-002 | Cleartext Traffic Enabled in Manifest | - | - | 2 |
 | NET-006 | Certificate Pinning Disabled in Code | - | - | 1 |
 | NET-008 | Hardcoded IP Address Endpoint | - | - | 2 |
-| NET-010 | Hardcoded API Endpoint | - | - | 7726 |
+| NET-010 | Hardcoded API Endpoint | - | - | 174 |
 | NET-018 | WebView JavaScript Enabled | 0% (0/1) | - | 0 |
 | PERM-001 | Dangerous Permission Declared | - | - | 16 |
 | PERM-002 | Dangerous Permission Declared But Unused | - | - | 4 |

@@ -13,6 +13,14 @@ semantic versioning.
   it and scores recall and precision against `bench/truth/`, writing
   `bench/BENCHMARK.md`; `--check` fails when a rule scores worse.
 
+### Changed
+
+- NET-010 (hardcoded API endpoint) now needs an API-shaped URL: an `api`
+  host (`api.x`, `api-v2.x`, `*apis.com`) or an `/api`, `/rest`, `/graphql`,
+  `/rpc` or `/vN` path segment. It used to match any URL, and on the
+  benchmark 98% of its 7,726 hits were licenses, docs, XML schemas and
+  timezone data. It now fires 174 times, nearly all on real backends.
+
 ## [1.3.1] - 2026-11-28
 
 ### Fixed
