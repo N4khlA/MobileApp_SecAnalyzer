@@ -13,6 +13,8 @@ semantic versioning.
   it and scores recall and precision against `bench/truth/`, writing
   `bench/BENCHMARK.md`; `--check` fails when a rule scores worse.
 
+## [1.3.1] - 2026-11-28
+
 ### Fixed
 
 Found by the first benchmark run; none showed up on masa's own fixtures,
