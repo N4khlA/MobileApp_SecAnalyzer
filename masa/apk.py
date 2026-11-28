@@ -143,6 +143,11 @@ EVIDENCE = {
 }
 
 # rules that are evidence-based (emit when evidence NOT found)
+_SHORT_CLASS = re.compile(r"^L(?:[\w$]+/)+[a-z]{1,2};$")
+_TELEPHONY_ID = re.compile(r"getDeviceId|getImei|getSubscriberId|getSimSerialNumber")
+_PHONE_STATE = {"android.permission.READ_PHONE_STATE",
+                "android.permission.READ_PRIVILEGED_PHONE_STATE"}
+
 ABSENCE_RULES = {"BIN-002": "obfuscation", "BIN-003": "root_detection",
                  "PRI-005": "screen_protection"}
 
@@ -611,6 +616,11 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
         for key, pattern in EVIDENCE.items():
             if re.search(pattern, evidence_pool):
                 result.positives.append(PositiveCheck(key, key, "found"))
+        # R8/ProGuard leaves 1-2 letter class names (Lsg/vantagepoint/a/a;)
+        if not any(p.key == "obfuscation" for p in result.positives) and sum(
+                1 for s in all_strings if _SHORT_CLASS.match(s)) >= 3:
+            result.positives.append(PositiveCheck(
+                "obfuscation", "obfuscation", "short class names"))
 
         # absence-based rules
         for rid, ev_key in ABSENCE_RULES.items():
@@ -627,6 +637,10 @@ def analyze_apk(input_path, out_dir=None, use_decompiler=True):
         biometric = biometric_binding_finding(evidence_pool)
         if biometric:
             findings.append(biometric)
+        # telephony IDs need READ_PHONE_STATE; without it the call only throws
+        if not _PHONE_STATE & set(result.manifest.permissions):
+            findings = [f for f in findings if not (
+                f.rule.id == "PRI-001" and _TELEPHONY_ID.search(f.snippet))]
         findings = _drop_manifest_view_duplicates(_dedupe(findings))
         result.findings = findings
         return result

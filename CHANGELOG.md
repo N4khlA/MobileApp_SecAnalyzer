@@ -52,6 +52,30 @@ semantic versioning.
   `developer.android.com`/`developers.google.com` and the public `.dev` TLD
   (`protobuf.dev`, `amp.dev`) were 96% of its hits. Also added `stage`,
   `stg`, `uat` and `preprod`. On the benchmark: 268 hits to 12.
+- Every rule under 50% precision on the labelled benchmark was fixed
+  (`bench/LABELLING.md` has the criteria); overall precision went from 66%
+  to 88%, recall unchanged:
+  - NET-008 skips loopback (`127.*`, `0.0.0.0`).
+  - NET-006: `allowInsecure` must be a whole word, not part of ExoPlayer's
+    `forceAllowInsecureDecoderComponents`.
+  - INP-* run on source code only: `new File(` never survives compilation,
+    so in dex it only ever matched messages.
+  - IPC-004 needs a call (`checkCallingOrSelfPermission(`); bare method names
+    in dex are references from AndroidX.
+  - CRY-004 matches the transformation (`"RC4"`, `"ARCFOUR"`,
+    `kCCAlgorithmRC4`), not catalogs or cipher blocklists.
+  - PRI-001 drops telephony IDs (`getDeviceId`, `getImei`, ...) when the app
+    lacks `READ_PHONE_STATE`, without which the call only throws (8% -> 100%).
+  - CFG-005 skips URL patterns with `*` wildcards (link-cleaning lists).
+  - BIN-002 counts R8/ProGuard's 1-2 letter class names as obfuscation
+    evidence; compiled apps rarely contain the word "ProGuard".
+  - NET-001 (15% -> 33%) skips docs (extensionless `README`, `CHANGES`,
+    `LICENSE`, ... are docs now), comment-only lines (also NET-010), "See /
+    Check http://..." messages, DTD identifiers, `/ns/` namespaces, media and
+    XML-feature identifiers, `example.com`, MPL/EPL license links, and the
+    generated `aboutlibraries.json` credits list. Its remaining false
+    positives are library homepage strings that a string cannot tell apart
+    from a real URL.
 
 ## [1.3.1] - 2026-11-28
 

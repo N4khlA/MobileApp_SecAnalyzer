@@ -73,7 +73,7 @@ class TestFileScoping(unittest.TestCase):
         cases = {"a/B.java": "source", "x.smali": "source",
                  "lib.c": "native_source", "res/values/strings.xml": "config",
                  "AndroidManifest.xml (normalized)": "config",
-                 "README.md": "doc", "LICENSE": "other",
+                 "README.md": "doc", "LICENSE": "doc", "x/y.bin": "other",
                  "META-INF/CERT.SF": "config", "META-INF/MANIFEST.MF": "config"}
         for name, kind in cases.items():
             with self.subTest(name):
@@ -163,6 +163,34 @@ class TestFileScoping(unittest.TestCase):
                     "https://amp.dev/", "https://google.aip.dev/122"):
             with self.subTest(url):
                 self.assertNotIn("CFG-005", ids(scan('u = "%s";' % url, "A.java")))
+
+    def test_low_precision_rules_found_by_bench(self):
+        def dex_ids(s):
+            findings = []
+            Scanner(ALL_RULES).scan_strings([s], "classes.dex", findings)
+            return ids(findings)
+        cases = [  # (rule, should fire, text, file)
+            ("NET-008", True, 'u = "http://192.168.1.20:8080/api";', "A.java"),
+            ("NET-008", False, 'u = "http://127.0.0.1:8080/";', "A.java"),
+            ("NET-006", True, "config.allowInsecure = true;", "A.java"),
+            ("NET-006", False, "builder.forceAllowInsecureDecoderComponents(true);", "A.java"),
+            ("IPC-004", True, 'checkCallingOrSelfPermission("x.ADMIN");', "A.java"),
+            ("INP-002", True, "File f = new File(dir, name);", "A.java"),
+            ("CRY-004", True, 'Cipher.getInstance("ARCFOUR");', "A.java"),
+            ("CRY-004", False, ".*(_DES|DH_|RC4|NULL).*", "A.java"),
+            ("CFG-005", True, 'u = "https://staging.tasks.org/";', "A.java"),
+            ("CFG-005", False, '"https://dev-pages.brave.software/navigation-tracking/*",',
+             "debounce.json")]
+        for rule, fires, text, name in cases:
+            with self.subTest(rule=rule, text=text):
+                (self.assertIn if fires else self.assertNotIn)(rule, ids(scan(text, name)))
+        # in dex, a bare method name or a message is not a call
+        for rule, s in (("IPC-004", "checkCallingOrSelfPermission"),
+                        ("INP-002", "Did you call Uri.parse()? Use new File(path)"),
+                        ("CRY-004", "Alg.Alias.Cipher.RC4")):
+            with self.subTest(rule=rule, s=s):
+                self.assertNotIn(rule, dex_ids(s))
+        self.assertIn("CRY-004", dex_ids("RC4"))
 
     def test_code_rules_skip_docs(self):
         text = 'Cipher.getInstance("DES/ECB/PKCS5Padding")'

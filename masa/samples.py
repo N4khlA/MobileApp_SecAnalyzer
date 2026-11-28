@@ -378,6 +378,7 @@ def build_android_manifest():
                  "android.permission.ACCESS_FINE_LOCATION",
                  "android.permission.READ_SMS",
                  "android.permission.READ_CONTACTS",
+                 "android.permission.READ_PHONE_STATE",   # for getDeviceId
                  "android.permission.SYSTEM_ALERT_WINDOW",
                  "android.permission.QUERY_ALL_PACKAGES"):
         p = axml.Element(None, "uses-permission")

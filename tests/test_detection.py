@@ -155,9 +155,31 @@ class TestCodeRules(unittest.TestCase):
                     "http://xmlpull.org/v1/doc/features.html#indent-output"]:
             with self.subTest(url):
                 self.assertNotIn("NET-001", scan_ids('u = "%s";' % url))
-        psl = "// ir : http://www.nic.ir/\nir\nac.ir\n"
+        psl = "ir : http://www.nic.ir/\nir\nac.ir\n"
         self.assertNotIn("NET-001", scan_ids(psl, "assets/public_suffix_list.dat"))
         self.assertIn("NET-001", scan_ids(psl, "assets/other.dat"))
+
+    def test_cleartext_url_skips_docs_comments_and_namespaces(self):
+        real = 'tiles = "http://openptmap.org/tiles/";'
+        self.assertIn("NET-001", scan_ids(real))
+        # found on real apps by bench/run.py
+        for text, name in [
+                ("<http://github.com/jhy/jsoup/issues/34>", "META-INF/CHANGES"),
+                ("see http://example.com/a for details", "notes/README"),
+                ('"website": "http://developer.android.com/x"', "assets/aboutlibraries.json"),
+                ("# file, You can obtain one at http://mozilla.org/MPL/2.0/.", "M.properties"),
+                ("// versioning](http://semver.org) where", "api.proto"),
+                (" * href=\"http://www.unicode.org/repos/cldr/x.xml\"", "U.java"),
+                ('"http://www.itunes.com/dtds/podcast-1.0.dtd"', "A.java"),
+                ('"http://dashif.org/guidelines/trickmode"', "A.java"),
+                ('"http://search.yahoo.com/mrss/"', "A.java"),
+                ("Check http://g.co/dev/packagevisibility.", "A.java"),
+                ('"http://apple.com/ns/ical/"', "A.java"),
+                ('"http://apache.org/xml/features/disallow-doctype-decl"', "A.java"),
+                ('"http://example.com/"', "A.java"),
+                ("http://www.eclipse.org/legal/epl-2.0.", "probe.xml")]:
+            with self.subTest(text):
+                self.assertNotIn("NET-001", scan_ids(text, name))
 
     def test_hardcoded_endpoint_needs_an_api_shape(self):
         endpoints = ["https://api-v2.soundcloud.com/search",
@@ -546,6 +568,32 @@ def _encrypted_macho(payload):
     data = bytearray(make_macho64(payload))
     struct.pack_into("<I", data, 32 + 0x48 + 16, 1)   # cryptid = 1
     return bytes(data)
+
+
+class TestAppContext(TempTreeMixin, unittest.TestCase):
+    """Checks that need more than one file: found on real apps by bench."""
+
+    def analyze(self, files):
+        return {f.rule.id for f in analyze_apk(self.make_tree(files),
+                                                use_decompiler=False).findings}
+
+    def test_telephony_ids_need_read_phone_state(self):
+        java = "class A { String id(TelephonyManager tm) { return tm.getDeviceId(); } }"
+        perm = '<uses-permission android:name="android.permission.READ_PHONE_STATE"/>'
+        self.assertNotIn("PRI-001", self.analyze(
+            {"AndroidManifest.xml": manifest(""), "src/A.java": java}))
+        self.assertIn("PRI-001", self.analyze(
+            {"AndroidManifest.xml": manifest("", perm), "src/A.java": java}))
+
+    def test_short_class_names_count_as_obfuscation(self):
+        from masa.samples import make_dex
+        plain = make_dex(["Lcom/example/app/MainActivity;", "Lcom/example/app/Util;"])
+        r8 = make_dex(["Lsg/vantagepoint/a/a;", "Lsg/vantagepoint/a/b;",
+                       "Lsg/vantagepoint/a/c;", "Lsg/vantagepoint/uncrackable1/MainActivity;"])
+        self.assertIn("BIN-002", self.analyze(
+            {"AndroidManifest.xml": manifest(""), "classes.dex": plain}))
+        self.assertNotIn("BIN-002", self.analyze(
+            {"AndroidManifest.xml": manifest(""), "classes.dex": r8}))
 
 
 class TestCleanApps(TempTreeMixin, unittest.TestCase):

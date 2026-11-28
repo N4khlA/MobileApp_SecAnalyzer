@@ -31,6 +31,8 @@ def file_kind(name: str) -> str:
     """Classify a text file by extension: source, native_source, config, doc
     or other. A suffix like "AndroidManifest.xml (normalized)" is ignored."""
     base = name.replace("\\", "/").rsplit("/", 1)[-1].split(" (", 1)[0]
+    if base.upper() in _DOC_NAMES:
+        return "doc"
     ext = base.rsplit(".", 1)[-1].lower() if "." in base else ""
     return _KINDS_BY_EXT.get(ext, "other")
 
@@ -42,7 +44,13 @@ _IGNORE = re.compile(
 
 # the Public Suffix List, bundled by most HTTP stacks: public registry
 # metadata whose comments name every registry's (http) website
-_PUBLIC_DATA = {"public_suffix_list.dat", "effective_tld_names.dat"}
+_PUBLIC_DATA = {"public_suffix_list.dat", "effective_tld_names.dat",
+                # generated credits list (AboutLibraries): names, links, licenses
+                "aboutlibraries.json"}
+_DOC_NAMES = {"README", "CHANGES", "CHANGELOG", "LICENSE", "LICENCE", "NOTICE",
+              "COPYING", "AUTHORS"}
+# URL rules skip comment-only lines: a link in a comment is documentation
+_URL_RULES = {"NET-001", "NET-010"}
 
 # shortcut: known crypto libraries by file name, not by their symbol table;
 # parse ELF dynsym (defined vs imported) if renamed libraries show up
@@ -108,6 +116,9 @@ class Scanner:
                 line = lines[line_no - 1] if line_no <= len(lines) else ""
                 match = m.group(0)
                 snippet = line.strip()[:240] if line else ""
+                if rid in _URL_RULES and line.lstrip().startswith(
+                        _COMMENT_STARTS):
+                    continue
                 finding = Finding(
                     cr.rule, file=filename, line=line_no, snippet=snippet,
                     match=mask_secret(match),

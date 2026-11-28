@@ -1,9 +1,9 @@
 {
   "BIN-002": {
-    "fp": 3,
+    "fp": 0,
     "hit": 1,
     "miss": 0,
-    "tp": 1,
+    "tp": 2,
     "unlabelled": 1
   },
   "BIN-003": {
@@ -49,7 +49,7 @@
     "unlabelled": 0
   },
   "CFG-005": {
-    "fp": 8,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 4,
@@ -84,10 +84,10 @@
     "unlabelled": 0
   },
   "CRY-004": {
-    "fp": 11,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 0,
+    "tp": 4,
     "unlabelled": 0
   },
   "CRY-005": {
@@ -118,20 +118,6 @@
     "tp": 5,
     "unlabelled": 0
   },
-  "INP-002": {
-    "fp": 3,
-    "hit": 0,
-    "miss": 0,
-    "tp": 0,
-    "unlabelled": 0
-  },
-  "IPC-004": {
-    "fp": 7,
-    "hit": 0,
-    "miss": 0,
-    "tp": 0,
-    "unlabelled": 0
-  },
   "LOG-001": {
     "fp": 0,
     "hit": 0,
@@ -147,10 +133,10 @@
     "unlabelled": 6
   },
   "NET-001": {
-    "fp": 104,
+    "fp": 12,
     "hit": 1,
     "miss": 0,
-    "tp": 18,
+    "tp": 6,
     "unlabelled": 0
   },
   "NET-002": {
@@ -160,22 +146,8 @@
     "tp": 2,
     "unlabelled": 0
   },
-  "NET-006": {
-    "fp": 1,
-    "hit": 0,
-    "miss": 0,
-    "tp": 0,
-    "unlabelled": 0
-  },
-  "NET-008": {
-    "fp": 2,
-    "hit": 0,
-    "miss": 0,
-    "tp": 0,
-    "unlabelled": 0
-  },
   "NET-010": {
-    "fp": 26,
+    "fp": 24,
     "hit": 0,
     "miss": 0,
     "tp": 146,
@@ -217,7 +189,7 @@
     "unlabelled": 0
   },
   "PRI-001": {
-    "fp": 12,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 1,

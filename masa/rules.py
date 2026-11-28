@@ -110,7 +110,8 @@ CRYPTO = [
          "SHA-1 is deprecated; collision attacks (SHAttered) are practical.",
          "Migrate to SHA-256 or stronger."),
     Rule("CRY-004", "RC4 Stream Cipher", "high", "M10", "crypto",
-         r"(?i)\bRC4\b",
+         # the transformation code asks for, not catalogs or blocklists
+         r"(?i)[\"'](?:RC4|ARCFOUR)[\"']|^(?:RC4|ARCFOUR)$|kCCAlgorithmRC4\b",
          "RC4 is broken (bias attacks) and prohibited by TLS standards.",
          "Use AES-GCM or ChaCha20-Poly1305."),
     Rule("CRY-005", "ECB Encryption Mode", "high", "M10", "crypto",
@@ -251,13 +252,19 @@ STORAGE = [
 
 NETWORK = [
     Rule("NET-001", "Cleartext HTTP URL", "high", "M5", "network",
-         r"\bhttp://(?!localhost|127\.0\.0\.1|10\.0\.2\.2|10\.0\.0\.2|"
+         r"(?<![Ss]ee )(?<!Check )"  # doc pointers inside messages
+         r"\bhttp://(?![^\s'\"<>]*\.dtd\b)"  # DTD identifiers
+         r"(?!localhost|127\.0\.0\.1|10\.0\.2\.2|10\.0\.0\.2|"
          r"192\.168\.|\[::1\]|0\.0\.0\.0|"
          # identifiers that are never fetched: XML namespaces, schemas, JAXP
          r"(?:schemas|ns)\.[a-z0-9.-]+/|(?:www\.)?w3\.org|"
          r"(?:www\.)?apple\.com/DTDs|xml\.org|(?:www\.)?schema\.org|purl\.org|"
-         r"xmlpull\.org|microformats\.org|javax\.xml\.|"
-         r"(?:www\.)?(?:apache|gnu|opensource)\.org/licenses)[^\s'\"<>]{5,}",
+         r"xmlpull\.org|microformats\.org|javax\.xml\.|dashif\.org|"
+         r"search\.yahoo\.com/mrss|podlove\.org|[a-z0-9.-]+/ns/|"
+         r"apache\.org/xml/features|(?:www\.)?example\.(?:com|org|net)\b|"
+         r"(?:www\.)?eclipse\.org/legal|"
+         r"(?:www\.)?(?:apache|gnu|opensource)\.org/licenses|mozilla\.org/MPL)"
+         r"[^\s'\"<>]{5,}",
          "Plaintext HTTP traffic can be intercepted or modified on the "
          "wire (eavesdropping, session hijacking, injection).",
          "Use HTTPS exclusively and disable cleartext traffic in the "
@@ -306,7 +313,7 @@ NETWORK = [
     Rule("NET-006", "Certificate Pinning Disabled in Code", "high", "M5",
          "network",
          r"(?i)(?:disableCertPinning|pinningEnabled\s*=\s*false|"
-         r"sslPinning\s*=\s*false|allowInsecure|unpinning|"
+         r"sslPinning\s*=\s*false|\ballowInsecure\b|unpinning|"
          r"NSURLSession\s*\(configuration:\s*\.ephemeral\)[^;]*http)",
          "Certificate pinning is explicitly switched off, removing "
          "protection against MITM via compromised CAs.",
@@ -317,7 +324,8 @@ NETWORK = [
          "Serve content over HTTPS and forbid http:// in the WebView "
          "client."),
     Rule("NET-008", "Hardcoded IP Address Endpoint", "medium", "M5", "network",
-         r"\bhttps?://\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?(?:[/'\"]|\b)",
+         r"\bhttps?://(?!127\.|0\.0\.0\.0)"  # loopback is not an endpoint
+         r"\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?(?:[/'\"]|\b)",
          "Backend endpoints are raw IP addresses - typical of test "
          "environments shipped by accident; also bypasses DNS-based "
          "controls.",
@@ -587,9 +595,10 @@ CONFIG = [
          # of one (staging.x, api-dev.x), never the TLD: "dev" inside
          # developer.android.com and the public .dev TLD were 96% of hits.
          # .test/.internal/.local are special-use, never public.
-         r"(?i)\bhttps?://(?=[a-z0-9.-]*(?<![a-z0-9])(?:staging|stage|stg|"
+         r"(?i)\bhttps?://(?![^\s'\"<>]*\*)"  # wildcard = a pattern
+         r"(?=[a-z0-9.-]*(?<![a-z0-9])(?:staging|stage|stg|"
          r"sandbox|test|testing|dev|qa|uat|preprod|internal)\d*[.-][a-z0-9])"
-         r"[a-z0-9.-]+|\bhttps?://[a-z0-9.-]+\.(?:test|internal|local)"
+         r"[a-z0-9.-]+|\bhttps?://(?![^\s'\"<>]*\*)[a-z0-9.-]+\.(?:test|internal|local)"
          r"(?![a-z0-9.-])",
          "A staging/test endpoint is reachable from the shipped app; it may "
          "leak production credentials or accept test data.",
@@ -700,7 +709,7 @@ IPC = [
          "in-app observer (Flow, LiveData)."),
     Rule("IPC-004", "Caller Permission Check Falls Back to Self", "medium",
          "M3", "ipc",
-         r"\b(?:enforce|check)CallingOrSelf(?:Uri)?Permission\b",
+         r"\b(?:enforce|check)CallingOrSelf(?:Uri)?Permission\s*\(",
          "checkCallingOrSelfPermission/enforceCallingOrSelfPermission "
          "succeed when called outside a Binder transaction, because they "
          "fall back to this app's own permissions (confused deputy).",
@@ -831,23 +840,29 @@ BY_ID = {r.id: r for r in ALL_RULES}
 CODE_KINDS: FrozenSet[str] = frozenset(
     {"source", "native_source", "dex", "native", "other"})
 NATIVE_KINDS: FrozenSet[str] = frozenset({"native_source", "native", "other"})
+SOURCE_KINDS: FrozenSet[str] = frozenset({"source", "native_source"})
 
 _TARGETS_BY_CATEGORY: Dict[str, FrozenSet[str]] = {
     "crypto": CODE_KINDS,
     "storage": CODE_KINDS,
     "logging": CODE_KINDS,
     "auth": CODE_KINDS,
-    "input": CODE_KINDS,
+    "input": SOURCE_KINDS,   # new File(...) never survives compilation
     "ipc": CODE_KINDS,
     "supplychain": CODE_KINDS,
     "privacy": CODE_KINDS | {"config"},
     "native": NATIVE_KINDS,
 }
 
+_TARGETS_BY_RULE: Dict[str, FrozenSet[str]] = {
+    "NET-001": CODE_KINDS | {"config"},   # a link in a README is not traffic
+}
+
 for _r in ALL_RULES:
     _r.cwe, _r.masvs = TAXA.get(_r.id, (None, None))
     if _r.pattern:
-        _r.targets = _TARGETS_BY_CATEGORY.get(_r.category)
+        _r.targets = _TARGETS_BY_RULE.get(_r.id,
+                                          _TARGETS_BY_CATEGORY.get(_r.category))
 
 
 def get_rule(rule_id: str) -> Optional[Rule]:
