@@ -84,14 +84,14 @@
     "unlabelled": 0
   },
   "CRY-002": {
-    "fp": 3,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 1,
     "unlabelled": 0
   },
   "CRY-003": {
-    "fp": 3,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 1,
@@ -196,11 +196,11 @@
     "unlabelled": 0
   },
   "PERM-002": {
-    "fp": 6,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 0,
-    "unlabelled": 3
+    "unlabelled": 2
   },
   "PERM-003": {
     "fp": 2,
@@ -217,10 +217,10 @@
     "unlabelled": 0
   },
   "PRI-001": {
-    "fp": 10,
+    "fp": 1,
     "hit": 0,
     "miss": 0,
-    "tp": 8,
+    "tp": 6,
     "unlabelled": 0
   },
   "PRI-002": {
@@ -245,14 +245,14 @@
     "unlabelled": 0
   },
   "SCP-002": {
-    "fp": 4,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
-    "tp": 4,
+    "tp": 27,
     "unlabelled": 0
   },
   "SCP-003": {
-    "fp": 5,
+    "fp": 0,
     "hit": 0,
     "miss": 0,
     "tp": 1,

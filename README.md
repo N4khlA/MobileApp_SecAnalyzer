@@ -217,7 +217,7 @@ finding is labelled against written criteria
 
 | | |
 |---|---|
-| Precision (findings that are true) | **79%** (840/1,067) |
+| Precision (findings that are true) | **81%** (861/1,058) |
 | Recall (known weaknesses found) | **57%** (8/14) |
 
 Per-rule numbers are in [bench/BENCHMARK.md](bench/BENCHMARK.md). The misses

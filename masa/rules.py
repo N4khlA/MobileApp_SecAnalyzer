@@ -103,13 +103,15 @@ CRYPTO = [
          "size, broken by modern brute-force and meet-in-the-middle attacks.",
          "Use AES-256 with a GCM/ChaCha20 authenticated mode."),
     Rule("CRY-002", "MD5 Hash Function", "high", "M10", "crypto",
-         r"(?i)(?:MessageDigest\.getInstance\s*\(\s*['\"]MD5|CC_MD5|md5\s*\()",
+         r"(?i)(?:MessageDigest\.getInstance\s*\(\s*['\"]MD5|CC_MD5|"
+         r"(?<!Hashing\.)md5\s*\()",  # Guava's Hashing.md5() message text
          "MD5 is cryptographically broken (collision attacks) and must not "
          "be used for password hashing, signatures or integrity checks.",
          "Use SHA-256/384 or an HMAC for integrity; Argon2/scrypt/PBKDF2 "
          "for password hashing."),
     Rule("CRY-003", "SHA-1 Hash Function", "medium", "M10", "crypto",
-         r"(?i)(?:MessageDigest\.getInstance\s*\(\s*['\"]SHA-?1|CC_SHA1|sha1\s*\()",
+         r"(?i)(?:MessageDigest\.getInstance\s*\(\s*['\"]SHA-?1|CC_SHA1|"
+         r"(?<!Hashing\.)sha1\s*\()",
          "SHA-1 is deprecated; collision attacks (SHAttered) are practical.",
          "Migrate to SHA-256 or stronger."),
     Rule("CRY-004", "RC4 Stream Cipher", "high", "M10", "crypto",
@@ -487,9 +489,11 @@ INPUT = [
 PRIVACY = [
     Rule("PRI-001", "Device Identifiers Collected (IMEI/MAC/IDFA)", "medium",
          "M6", "privacy",
-         r"(?i)(?:getDeviceId|getImei|getSubscriberId|getSimSerialNumber|"
+         # whole identifiers: not sGetDeviceIdMethod, getDeviceIdleController,
+         # loadWidgetDeviceIdPref or a Kotlin getMacAddress$annotations
+         r"(?<![\w$])(?:getDeviceId|getImei|getSubscriberId|getSimSerialNumber|"
          r"getMacAddress|identifierForVendor|advertisingIdentifier|"
-         r"ASIdentifierManager)",
+         r"ASIdentifierManager)(?![\w$])",
          "Hardware identifiers are collected; they cannot be reset by users "
          "and are considered PII under GDPR/CCPA.",
          "Use scoped identifiers (Advertising ID with consent, or app-"
@@ -749,12 +753,16 @@ IPC = [
 
 SUPPLYCHAIN = [
     Rule("SCP-002", "Legacy Apache HTTP Client", "medium", "M2", "supplychain",
-         r"(?i)(?:org\.apache\.http|DefaultHttpClient|AndroidHttpClient)",
+         # the Apache client packages, not any class named DefaultHttpClient
+         # (Aurora's gplayapi has its own) or the legacy jar's path
+         r"org[./]apache[./]http[./](?:client|impl|conn)\b|"
+         r"android[./]net[./]http[./]AndroidHttpClient|\bAndroidHttpClient\b",
          "The deprecated Apache HTTP client ignores modern TLS defaults and "
          "is unmaintained.",
          "Migrate to OkHttp/HttpURLConnection/URLSession with modern TLS."),
     Rule("SCP-003", "Dynamic Code Loading", "medium", "M2", "supplychain",
-         r"(?i)(?:DexClassLoader|PathClassLoader|loadLibrary\s*\(\s*['\"][^'\"]+"
+         # loaders for extra code; PathClassLoader is every app's own loader
+         r"\b(?:InMemory)?DexClassLoader\b|(?i:loadLibrary\s*\(\s*['\"][^'\"]+"
          r"\.so['\"]|dlopen\s*\()",
          "Code is loaded dynamically; if the source is remotely "
          "configurable or checksums are missing, an attacker can inject "

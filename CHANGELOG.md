@@ -6,11 +6,13 @@ semantic versioning.
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-29
+
 ### Added
 
 - Benchmark corpus grown from 12 to 32 apps (20 more F-Droid apps: crypto,
-  VPN, XMPP, sync, file managers, a Flutter app). Precision on 1,067
-  labelled findings is 79% (88% on the first 12); recall unchanged at 57%.
+  VPN, XMPP, sync, file managers, a Flutter app). Precision on 1,058
+  labelled findings is 81% (88% on the first 12); recall unchanged at 57%.
 
 - CI job `bench` runs `bench/run.py --check` on changes to `masa/` or
   `bench/` and fails when a rule's precision or recall drops. Apps are
@@ -31,6 +33,14 @@ semantic versioning.
 - AboutLibraries credits lists and license texts are recognised by content,
   so resource shrinking (`res/M7.json`, `res/XB`) no longer hides them;
   `DEPENDENCIES` counts as a doc file; NET-001 skips XMPP namespaces.
+- PRI-001 matches whole identifiers (`getDeviceId`, not `sGetDeviceIdMethod`,
+  `getDeviceIdleController` or `loadWidgetDeviceIdPref`).
+- SCP-002 needs the Apache client packages (`org.apache.http.client|impl|conn`)
+  or `AndroidHttpClient`; other classes named `DefaultHttpClient` and the
+  legacy jar's path no longer count.
+- SCP-003 matches `DexClassLoader`/`InMemoryDexClassLoader` only;
+  `PathClassLoader` is every app's own loader.
+- CRY-002/CRY-003 skip Guava's `Hashing.md5()`/`Hashing.sha1()` message text.
 
 ### Fixed
 
@@ -38,6 +48,10 @@ semantic versioning.
   NAT-006..010, ...) carried no CWE or MASVS id in JSON, Markdown and HTML:
   they were built from rule copies made before the ids were attached. SARIF
   was not affected.
+- PERM-002 (permission declared but unused) called used permissions unused:
+  its usage keywords were whole words, so `getExternalStorageDirectory`,
+  `FusedLocationProviderClient` or `GeofencingClient` never counted as use.
+  All 20 keywords now match as prefixes.
 
 ## [1.4.0] - 2026-11-28
 

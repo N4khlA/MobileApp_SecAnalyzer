@@ -42,7 +42,7 @@ Second pass (2026-11-29, 20 more F-Droid apps), same criteria, plus:
 | PRI-001 | exact `getDeviceId`/`getImei`/`getSubscriberId…` in an app with `READ_PHONE_STATE` | substring hits: `sGetDeviceIdMethod`, `…WidgetDeviceIdPref`, `getDeviceIdleController`, a server's `getMacAddress` |
 | BIN-003 | no root detection | Amaze and Material Files, which detect root to offer root features |
 | NAT-009 | — | Obtainium's `libapp.so`: a Dart snapshot, not C code |
-| SCP-002 | `AndroidHttpClient` referenced | Aurora's own `…gplayapi.network.DefaultHttpClient`, a jar path string |
+| SCP-002 | `AndroidHttpClient` or `org/apache/http/client|impl|conn` classes referenced | Aurora's own `…gplayapi.network.DefaultHttpClient`, a jar path string |
 | SCP-003 | — | bare `PathClassLoader`/`BaseDexClassLoader` type references |
 | CRY-002, CRY-003 | App Manager's "MD5 (unreliable)" checksum | Guava's `Hashing.md5()`/`Hashing.sha1()` messages |
 | NET-004 | KDE Connect's `trustAllCerts` (self-signed device certs by design) | — |

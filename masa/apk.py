@@ -8,6 +8,7 @@ Handles:
   - optional apktool/jadx decompilation when installed
 """
 
+import copy
 import json
 import os
 import re
@@ -28,63 +29,61 @@ MAX_TEXT_SIZE = 8 * 1024 * 1024
 MANIFEST_VIEW = "AndroidManifest.xml (normalized)"
 
 # dangerous-protection-level permissions and their usage keywords
+# keyword -> permission is used; keywords match as prefixes
+# (getExternalStorage... , FusedLocation..., Geofenc...)
 DANGEROUS = {
     "android.permission.CAMERA": (
         "camera/microphone", r"(?i)\b(camera|MediaRecorder|takePicture|Camera2|"
-        r"CameraManager|imageCapture)\b", "medium"),
+        r"CameraManager|imageCapture)", "medium"),
     "android.permission.RECORD_AUDIO": (
         "microphone", r"(?i)\b(MediaRecorder|AudioRecord|recordAudio|"
-        r"startRecording|AudioManager)\b", "medium"),
+        r"startRecording|AudioManager)", "medium"),
     "android.permission.ACCESS_FINE_LOCATION": (
         "precise location", r"(?i)\b(LocationManager|FusedLocation|"
-        r"getLastKnownLocation|requestLocationUpdates|Geofence|geolocation)"
-        r"\b", "medium"),
+        r"getLastKnownLocation|requestLocationUpdates|Geofence|geolocation)", "medium"),
     "android.permission.ACCESS_COARSE_LOCATION": (
         "approximate location", r"(?i)\b(LocationManager|FusedLocation|"
-        r"requestLocationUpdates|Geocoder|geolocation)\b", "low"),
+        r"requestLocationUpdates|Geocoder|geolocation)", "low"),
     "android.permission.READ_CONTACTS": (
         "contacts", r"(?i)\b(ContactsContract|RawContacts|getContacts|"
-        r"ContactPicker|CNContact)\b", "medium"),
+        r"ContactPicker|CNContact)", "medium"),
     "android.permission.WRITE_CONTACTS": (
         "contacts write", r"(?i)\b(ContactsContract|RawContacts|"
-        r"insert.*contact|ContactEditor)\b", "medium"),
+        r"insert.*contact|ContactEditor)", "medium"),
     "android.permission.READ_SMS": (
         "SMS read", r"(?i)\b(SmsManager|Telephony\.Sms|SmsMessage|"
-        r"SMS_RECEIVED)\b", "high"),
+        r"SMS_RECEIVED)", "high"),
     "android.permission.SEND_SMS": (
-        "SMS send", r"(?i)\b(SmsManager|sendTextMessage|sendDataMessage)"
-        r"\b", "medium"),
+        "SMS send", r"(?i)\b(SmsManager|sendTextMessage|sendDataMessage)", "medium"),
     "android.permission.RECEIVE_SMS": (
         "SMS receive", r"(?i)\b(SMS_RECEIVED|SmsMessage|"
-        r"android\.provider\.Telephony\.SMS)\b", "high"),
+        r"android\.provider\.Telephony\.SMS)", "high"),
     "android.permission.READ_CALL_LOG": (
-        "call log", r"(?i)\b(CallLog|callLog|READ_CALL_LOG)\b", "high"),
+        "call log", r"(?i)\b(CallLog|callLog|READ_CALL_LOG)", "high"),
     "android.permission.WRITE_CALL_LOG": (
-        "call log write", r"(?i)\b(CallLog)\b", "medium"),
+        "call log write", r"(?i)\b(CallLog)", "medium"),
     "android.permission.READ_PHONE_STATE": (
         "phone state", r"(?i)\b(TelephonyManager|getDeviceId|getSubscriberId|"
-        r"getSimSerialNumber|PhoneStateListener)\b", "medium"),
+        r"getSimSerialNumber|PhoneStateListener)", "medium"),
     "android.permission.CALL_PHONE": (
         "phone calls", r"(?i)\b(ACTION_CALL|Intent\.ACTION_CALL|TelecomManager"
-        r"|tel:)\b", "medium"),
+        r"|tel:)", "medium"),
     "android.permission.BODY_SENSORS": (
         "health sensors", r"(?i)\b(SensorManager|Sensor\.TYPE_HEART|"
-        r"BodySensor)\b", "medium"),
+        r"BodySensor)", "medium"),
     "android.permission.READ_EXTERNAL_STORAGE": (
         "external storage", r"(?i)\b(getExternalStorage|MediaStore|"
-        r"ACTION_OPEN_DOCUMENT)\b", "low"),
+        r"ACTION_OPEN_DOCUMENT)", "low"),
     "android.permission.WRITE_EXTERNAL_STORAGE": (
-        "external storage write", r"(?i)\b(getExternalStorage|MediaStore)"
-        r"\b", "low"),
+        "external storage write", r"(?i)\b(getExternalStorage|MediaStore)", "low"),
     "android.permission.READ_MEDIA_IMAGES": (
-        "photo library", r"(?i)\b(MediaStore|PickVisualMedia|getContentResolver)"
-        r"\b", "low"),
+        "photo library", r"(?i)\b(MediaStore|PickVisualMedia|getContentResolver)", "low"),
     "android.permission.READ_MEDIA_VIDEO": (
-        "video library", r"(?i)\b(MediaStore)\b", "low"),
+        "video library", r"(?i)\b(MediaStore)", "low"),
     "android.permission.READ_MEDIA_AUDIO": (
-        "audio library", r"(?i)\b(MediaStore)\b", "low"),
+        "audio library", r"(?i)\b(MediaStore)", "low"),
     "android.permission.ACCESS_BACKGROUND_LOCATION": (
-        "background location", r"(?i)\b(LocationManager|FusedLocation)\b",
+        "background location", r"(?i)\b(LocationManager|FusedLocation)",
         "high"),
 }
 
@@ -469,9 +468,14 @@ def _drop_manifest_view_duplicates(findings):
             if not (f.file == MANIFEST_VIEW and f.rule.id in structured)]
 
 
-def _rule(id_):
-    # the shared rule, so findings carry its CWE/MASVS ids
-    return BY_ID.get(id_) or Rule(id_, id_, "medium", "M8", "config")
+def _rule(id_, severity=None):
+    """The shared rule, so findings carry its CWE/MASVS ids; a copy when a
+    finding needs its own severity, so the shared rule never changes."""
+    rule = BY_ID.get(id_) or Rule(id_, id_, "medium", "M8", "config")
+    if severity is not None and severity != rule.severity:
+        rule = copy.copy(rule)
+        rule.severity = severity
+    return rule
 
 
 def _skip_large(result, name, size):
@@ -692,8 +696,7 @@ def _manifest_checks(result, findings, files):
             sev = "high" if target < 28 else ("medium" if target < 30 else
                                               "low")
             if sev != "low":
-                r = _rule("SCP-001")
-                r.severity = sev
+                r = _rule("SCP-001", sev)
                 findings.append(Finding(r, file=result.manifest_path,
                                         evidence_type="manifest",
                                         extra={"targetSdk": m.target_sdk}))
@@ -816,7 +819,7 @@ def _signing_checks(result, findings, input_path):
         except (TypeError, ValueError):
             min_sdk = None
         if min_sdk is not None and min_sdk >= 24:
-            r.severity = "medium"
+            r = _rule(r.id, "medium")
         findings.append(Finding(r, file="(apk)", evidence_type="binary",
                                 extra={"minSdk": result.manifest.min_sdk}))
 
@@ -826,8 +829,7 @@ def _permission_checks(result, findings, evidence_pool):
     for perm, (what, keyword, severity) in DANGEROUS.items():
         if perm not in perms:
             continue
-        r = _rule("PERM-001")
-        r.severity = severity
+        r = _rule("PERM-001", severity)
         findings.append(Finding(r, file=result.manifest_path,
                                 evidence_type="manifest",
                                 extra={"permission": perm, "what": what}))
@@ -844,8 +846,7 @@ def _permission_checks(result, findings, evidence_pool):
                                     extra={"permission": perm, "what": what}))
     for label, severity, combo in DANGER_COMBOS:
         if all(c in perms for c in combo):
-            r = _rule("PERM-003")
-            r.severity = severity
+            r = _rule("PERM-003", severity)
             findings.append(Finding(r, file=result.manifest_path,
                                     evidence_type="manifest",
                                     extra={"combo": label,

@@ -71,6 +71,19 @@ class TestTaxonomy(unittest.TestCase):
             with self.subTest(f.rule.id):
                 self.assertEqual((f.to_dict()["cwe"], f.to_dict()["masvs"]), (cwe, masvs))
 
+    def test_per_finding_severity_leaves_the_shared_rule_alone(self):
+        import tempfile as _t
+        from masa.apk import analyze_apk
+        from masa.samples import build_apk
+        d = _t.mkdtemp(prefix="masa_sev_")
+        self.addCleanup(shutil.rmtree, d, True)
+        before = {r.id: r.severity for r in ALL_RULES}
+        perms = {f.extra["permission"]: f.severity
+                 for f in analyze_apk(build_apk(d), use_decompiler=False).findings
+                 if f.rule.id == "PERM-001"}
+        self.assertGreater(len(set(perms.values())), 1, perms)  # not collapsed
+        self.assertEqual({r.id: r.severity for r in ALL_RULES}, before)
+
     def test_sarif_rule_tags(self):
         f = Finding(BY_ID["SEC-001"], file="a.java", line=1, snippet=AWS)
         data = {"findings": [f.to_dict()],
@@ -213,6 +226,34 @@ class TestFileScoping(unittest.TestCase):
             with self.subTest(rule=rule, s=s):
                 self.assertNotIn(rule, dex_ids(s))
         self.assertIn("CRY-004", dex_ids("RC4"))
+
+    def test_second_pass_rules_found_by_bench(self):
+        def dex_ids(s):
+            findings = []
+            Scanner(ALL_RULES).scan_strings([s], "classes.dex", findings)
+            return ids(findings)
+        cases = [  # (rule, fires, dex string) from the 32-app corpus
+            ("PRI-001", True, "getDeviceId"), ("PRI-001", True, "getImei"),
+            ("PRI-001", False, "sGetDeviceIdMethod"),
+            ("PRI-001", False, "getDeviceIdleController"),
+            ("PRI-001", False, "loadWidgetDeviceIdPref"),
+            ("PRI-001", False, "getMacAddress$annotations"),
+            ("SCP-002", True, "Lorg/apache/http/impl/client/DefaultHttpClient;"),
+            ("SCP-002", True, "Landroid/net/http/AndroidHttpClient;"),
+            ("SCP-002", False, "Lcom/aurora/gplayapi/network/DefaultHttpClient;"),
+            ("SCP-002", False, "/system/framework/org.apache.http.legacy.boot.jar"),
+            ("SCP-003", True, "Ldalvik/system/DexClassLoader;"),
+            ("SCP-003", True, "Ldalvik/system/InMemoryDexClassLoader;"),
+            ("SCP-003", False, "Ldalvik/system/PathClassLoader;"),
+            ("SCP-003", False, "Ldalvik/system/BaseDexClassLoader;"),
+            ("CRY-002", False, "Use Hashing.md5() only for legacy"),
+            ("CRY-003", False, "Hashing.sha1()"),
+            ("CRY-002", True, "MD5 (unreliable)")]
+        for rule, fires, s in cases:
+            with self.subTest(rule=rule, s=s):
+                (self.assertIn if fires else self.assertNotIn)(rule, dex_ids(s))
+        self.assertIn("CRY-002", ids(scan(
+            'MessageDigest.getInstance("MD5");', "A.java")))
 
     def test_private_key_needs_a_body(self):
         body = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7" * 2

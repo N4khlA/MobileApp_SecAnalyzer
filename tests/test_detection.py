@@ -585,6 +585,22 @@ class TestAppContext(TempTreeMixin, unittest.TestCase):
         self.assertIn("PRI-001", self.analyze(
             {"AndroidManifest.xml": manifest("", perm), "src/A.java": java}))
 
+    def test_permission_usage_keywords_are_prefixes(self):
+        from masa.samples import make_dex
+        cases = [
+            ("WRITE_EXTERNAL_STORAGE", "getExternalStorageDirectory"),
+            ("ACCESS_FINE_LOCATION",
+             "Lcom/google/android/gms/location/FusedLocationProviderClient;")]
+        for perm, used in cases:
+            body = '<uses-permission android:name="android.permission.%s"/>' % perm
+            with self.subTest(perm):
+                self.assertNotIn("PERM-002", self.analyze(
+                    {"AndroidManifest.xml": manifest("", body),
+                     "classes.dex": make_dex([used])}))
+                self.assertIn("PERM-002", self.analyze(
+                    {"AndroidManifest.xml": manifest("", body),
+                     "classes.dex": make_dex(["Lcom/example/Unrelated;"])}))
+
     def test_short_class_names_count_as_obfuscation(self):
         from masa.samples import make_dex
         plain = make_dex(["Lcom/example/app/MainActivity;", "Lcom/example/app/Util;"])

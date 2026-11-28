@@ -1,11 +1,11 @@
 # masa roadmap
 
-Where masa is today (v1.4.0, on PyPI as `masa-scan`): 100 regex rules plus
+Where masa is today (v1.4.1, on PyPI as `masa-scan`): 100 regex rules plus
 programmatic manifest, plist and binary checks, each tagged with CWE and MASVS
 ids. It is zero-dependency, reports in SARIF, JSON, Markdown and HTML, has a
 coverage-honest "incomplete scan" signal, supports suppressions and baselines,
-ships as a GitHub Action and passes 146 tests. On a labelled benchmark of
-12 real apps its findings are 88% precise, with 57% recall of known weaknesses.
+ships as a GitHub Action and passes 153 tests. On a labelled benchmark of
+32 real apps its findings are 81% precise, with 57% recall of known weaknesses.
 
 What holds it back: rules are hardcoded in Python, string-only scanning cannot
 see code context (the recall ceiling), and apps built with Flutter, React Native or Xamarin go
