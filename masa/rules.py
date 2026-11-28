@@ -249,8 +249,12 @@ STORAGE = [
 NETWORK = [
     Rule("NET-001", "Cleartext HTTP URL", "high", "M5", "network",
          r"\bhttp://(?!localhost|127\.0\.0\.1|10\.0\.2\.2|10\.0\.0\.2|"
-         r"192\.168\.|\[::1\]|0\.0\.0\.0|schemas\.android\.com|www\.w3\.org|"
-         r"(?:www\.)?apple\.com/DTDs|xml\.org|ns\.adobe\.com)[^\s'\"<>]{5,}",
+         r"192\.168\.|\[::1\]|0\.0\.0\.0|"
+         # identifiers that are never fetched: XML namespaces, schemas, JAXP
+         r"(?:schemas|ns)\.[a-z0-9.-]+/|(?:www\.)?w3\.org|"
+         r"(?:www\.)?apple\.com/DTDs|xml\.org|(?:www\.)?schema\.org|purl\.org|"
+         r"xmlpull\.org|microformats\.org|javax\.xml\.|"
+         r"(?:www\.)?(?:apache|gnu|opensource)\.org/licenses)[^\s'\"<>]{5,}",
          "Plaintext HTTP traffic can be intercepted or modified on the "
          "wire (eavesdropping, session hijacking, injection).",
          "Use HTTPS exclusively and disable cleartext traffic in the "

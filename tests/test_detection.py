@@ -140,6 +140,25 @@ class TestCodeRules(unittest.TestCase):
         self.assertIn("NET-010",
                       scan_ids('url = "https://api.example.com/v1/users"'))
 
+    def test_cleartext_url_skips_identifiers_and_licenses(self):
+        for url in ["http://api.insecure-bank.com/v1/balance",
+                    "http://cdn.example.com/app.js"]:
+            with self.subTest(url):
+                self.assertIn("NET-001", scan_ids('u = "%s";' % url))
+        # never fetched; found by bench/run.py on real apps
+        for url in ["http://schemas.openxmlformats.org/drawingml/2006/main",
+                    "http://www.apache.org/licenses/LICENSE-2.0",
+                    "http://www.gnu.org/licenses/gpl-3.0.html",
+                    "http://schema.org/Person",
+                    "http://purl.org/dc/elements/1.1/",
+                    "http://javax.xml.XMLConstants/property/accessExternalDTD",
+                    "http://xmlpull.org/v1/doc/features.html#indent-output"]:
+            with self.subTest(url):
+                self.assertNotIn("NET-001", scan_ids('u = "%s";' % url))
+        psl = "// ir : http://www.nic.ir/\nir\nac.ir\n"
+        self.assertNotIn("NET-001", scan_ids(psl, "assets/public_suffix_list.dat"))
+        self.assertIn("NET-001", scan_ids(psl, "assets/other.dat"))
+
     def test_hardcoded_endpoint_needs_an_api_shape(self):
         endpoints = ["https://api-v2.soundcloud.com/search",
                      "https://www.googleapis.com/youtube/v3/videos",

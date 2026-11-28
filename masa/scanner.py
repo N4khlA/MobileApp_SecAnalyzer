@@ -40,6 +40,10 @@ _IGNORE = re.compile(
     r"(?:\s*(?:--|:)\s*(.*?))?\s*(?:\*/|-->)?\s*$")
 
 
+# the Public Suffix List, bundled by most HTTP stacks: public registry
+# metadata whose comments name every registry's (http) website
+_PUBLIC_DATA = {"public_suffix_list.dat", "effective_tld_names.dat"}
+
 _COMMENT_STARTS = ("//", "#", "/*", "*", "<!--", ";", "--")
 
 
@@ -86,6 +90,8 @@ class Scanner:
 
     def scan_text(self, content: str, filename: str, findings: List[Finding]) -> List[Finding]:
         """content: str, filename: display path. Appends Findings."""
+        if filename.replace("\\", "/").rsplit("/", 1)[-1].lower() in _PUBLIC_DATA:
+            return findings
         lines = content.split("\n")
         kind = file_kind(filename)
         has_ignore = "masa-ignore" in content

@@ -20,6 +20,13 @@ semantic versioning.
   `/rpc` or `/vN` path segment. It used to match any URL, and on the
   benchmark 98% of its 7,726 hits were licenses, docs, XML schemas and
   timezone data. It now fires 174 times, nearly all on real backends.
+- NET-001 (cleartext HTTP URL) skips URLs that are never fetched: XML
+  namespaces and schemas (`schemas.*`, `schema.org`, `purl.org`,
+  `xmlpull.org`, `microformats.org`), JAXP property names
+  (`http://javax.xml.…`) and license links (Apache, GNU, OSI). The bundled
+  Public Suffix List (`public_suffix_list.dat`, `effective_tld_names.dat`)
+  is no longer text-scanned: its comments name every domain registry's
+  website. On the benchmark NET-001 went from 1,773 hits to 122.
 
 ## [1.3.1] - 2026-11-28
 
