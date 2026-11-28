@@ -583,8 +583,14 @@ CONFIG = [
          "restrict their use."),
     Rule("CFG-005", "Staging/Test Endpoint in Production Build", "low", "M8",
          "config",
-         r"(?i)\bhttps?://[a-z0-9.-]*(?:staging|sandbox|test|dev|"
-         r"internal|qa)[a-z0-9.-]*\b|\.(?:test|dev|staging)\b",
+         # the keyword must be a whole host label or a dash-separated part
+         # of one (staging.x, api-dev.x), never the TLD: "dev" inside
+         # developer.android.com and the public .dev TLD were 96% of hits.
+         # .test/.internal/.local are special-use, never public.
+         r"(?i)\bhttps?://(?=[a-z0-9.-]*(?<![a-z0-9])(?:staging|stage|stg|"
+         r"sandbox|test|testing|dev|qa|uat|preprod|internal)\d*[.-][a-z0-9])"
+         r"[a-z0-9.-]+|\bhttps?://[a-z0-9.-]+\.(?:test|internal|local)"
+         r"(?![a-z0-9.-])",
          "A staging/test endpoint is reachable from the shipped app; it may "
          "leak production credentials or accept test data.",
          "Remove staging endpoints from release builds."),

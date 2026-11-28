@@ -6,24 +6,24 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 |---|---|
 | Recall (expected weaknesses found) | 57% (8/14) |
 | Precision (labelled findings) | 100% (30/30) |
-| Findings not labelled yet | 799 |
+| Findings not labelled yet | 543 |
 
 ## Apps
 
 | App | Kind | Findings | Coverage | Seconds |
 |---|---|---:|---|---:|
-| InsecureBankv2 | vulnerable | 72 | complete | 2.9 |
+| InsecureBankv2 | vulnerable | 71 | complete | 3.3 |
 | UnCrackable-Android-L1 | vulnerable | 6 | complete | 0.0 |
 | UnCrackable-Android-L2 | hardened | 6 | complete | 0.6 |
-| UnCrackable-Android-L3 | hardened | 11 | complete | 1.1 |
-| UnCrackable-iOS-L1 | hardened | 4 | complete | 0.0 |
-| de.danoeh.antennapod | clean | 51 | complete | 6.6 |
-| org.schabi.newpipe | clean | 225 | complete | 9.3 |
-| org.tasks | clean | 92 | complete | 25.8 |
-| eu.faircode.email | clean | 169 | complete | 22.8 |
-| com.fsck.k9 | clean | 41 | complete | 7.6 |
-| org.fossify.notes | clean | 39 | complete | 3.4 |
-| com.github.libretube | clean | 113 | complete | 7.1 |
+| UnCrackable-Android-L3 | hardened | 11 | complete | 1.2 |
+| UnCrackable-iOS-L1 | hardened | 4 | complete | 0.1 |
+| de.danoeh.antennapod | clean | 45 | complete | 6.7 |
+| org.schabi.newpipe | clean | 94 | complete | 9.8 |
+| org.tasks | clean | 91 | complete | 22.8 |
+| eu.faircode.email | clean | 93 | complete | 26.3 |
+| com.fsck.k9 | clean | 39 | complete | 7.3 |
+| org.fossify.notes | clean | 37 | complete | 2.8 |
+| com.github.libretube | clean | 76 | complete | 7.4 |
 
 ## Rules
 
@@ -36,7 +36,7 @@ masa 1.3.1, scanned without a decompiler (dex and binary strings, resources, man
 | CFG-001 | Exported Component Without Permission | 100% (1/1) | 100% (6/6) | 75 |
 | CFG-002 | Backup Enabled (allowBackup=true) | 100% (1/1) | 100% (1/1) | 9 |
 | CFG-004 | Debuggable Application | 100% (1/1) | 100% (1/1) | 0 |
-| CFG-005 | Staging/Test Endpoint in Production Build | - | - | 268 |
+| CFG-005 | Staging/Test Endpoint in Production Build | - | - | 12 |
 | CFG-006 | Content Provider Partially Protected | - | - | 2 |
 | CFG-007 | Component Guarded by Weak Custom Permission | - | - | 6 |
 | CRY-001 | Deprecated DES / 3DES Cipher | - | - | 7 |

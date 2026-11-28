@@ -148,6 +148,22 @@ class TestFileScoping(unittest.TestCase):
             with self.subTest(s):
                 self.assertNotIn("PRI-002", dex_ids(s))
 
+    def test_staging_endpoint_needs_a_staging_host_label(self):
+        for url in ("https://api.vulnbank.staging.internal/v1/ping",
+                    "https://staging.tasks.org/", "http://api-dev.example.com/x",
+                    "https://qa2.example.com", "http://uat.bank.example/login",
+                    "http://backend.test/", "https://printer.local/"):
+            with self.subTest(url):
+                self.assertIn("CFG-005", ids(scan('u = "%s";' % url, "A.java")))
+        # found on real apps by bench/run.py
+        for url in ("https://developer.android.com/jetpack/androidx",
+                    "https://developers.google.com/protocol-buffers/",
+                    "https://developer.mozilla.org/en-US/docs/Web",
+                    "https://protobuf.dev/", "https://libretube.dev",
+                    "https://amp.dev/", "https://google.aip.dev/122"):
+            with self.subTest(url):
+                self.assertNotIn("CFG-005", ids(scan('u = "%s";' % url, "A.java")))
+
     def test_code_rules_skip_docs(self):
         text = 'Cipher.getInstance("DES/ECB/PKCS5Padding")'
         self.assertIn("CRY-001", ids(scan(text, "Crypto.java")))

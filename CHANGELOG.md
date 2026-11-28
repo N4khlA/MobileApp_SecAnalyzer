@@ -46,6 +46,12 @@ semantic versioning.
   `whereRangeAdjust`, ...): 429 of its 431 benchmark hits, all in F-Droid
   apps, which ban trackers. It now also detects Google Analytics by its entry
   class. On the benchmark: 431 hits to 1, Google Analytics in InsecureBankv2.
+- CFG-005 (staging/test endpoint) needs the keyword as a whole host label or
+  a dash-separated part of one (`staging.x`, `api-dev.x`, `qa2.x`), never the
+  TLD, or a special-use `.test`/`.internal`/`.local` host. "dev" inside
+  `developer.android.com`/`developers.google.com` and the public `.dev` TLD
+  (`protobuf.dev`, `amp.dev`) were 96% of its hits. Also added `stage`,
+  `stg`, `uat` and `preprod`. On the benchmark: 268 hits to 12.
 
 ## [1.3.1] - 2026-11-28
 
